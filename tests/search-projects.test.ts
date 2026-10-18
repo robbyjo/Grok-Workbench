@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, symlink } from 'node:fs/promises';
+import { mkdtemp, readFile, symlink, realpath } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Store } from '../electron/store';
@@ -153,7 +153,7 @@ test('project rename/remove/restore persists identities, transcripts, worktree p
   assert.equal(restored.project(project.id).name, 'Renamed');
   assert.deepEqual(restored.thread(thread.id), thread);
   // Reopening the canonical folder restores the original project, rather than duplicating it.
-  const reopened = restored.openProject(folder, 'Ignored directory name');
+  const reopened = restored.openProject(await realpath(folder), 'Ignored directory name');
   assert.equal(reopened.id, project.id);
   assert.equal(reopened.name, 'Renamed');
   assert.equal(reopened.hidden, false);

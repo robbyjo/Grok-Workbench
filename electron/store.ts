@@ -462,14 +462,14 @@ export class Store {
       // Windows short path or another alias to its canonical folder.
       let canonical: string | undefined;
       try {
-        canonical = realpathSync(path);
+        canonical = realpathSync.native(path);
       } catch {
         // Missing projects can still be retained in saved metadata.
       }
       if (canonical)
         project = this.state.projects.find((item) => {
           try {
-            return realpathSync(item.path) === canonical;
+            return realpathSync.native(item.path) === canonical;
           } catch {
             return false;
           }
