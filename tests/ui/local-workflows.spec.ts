@@ -80,6 +80,17 @@ test('native local workflow controls: chunks/comments, exact config editing, reu
     expect(git(['diff', '--cached'])).not.toContain('LAST_EDIT');
     await page.getByRole('button', { name: 'Settings', exact: true }).click();
     const dialog = page.getByRole('dialog', { name: 'Settings', exact: true });
+    // Grok may initialize its marketplace fields on the first MCP inventory.
+    // Wait for that writer before reviewing the exact configuration snapshot.
+    await expect(
+      dialog.getByRole('button', { name: 'Test connection: sample', exact: true }),
+    ).toBeVisible();
+    const initializedConfig = await readFile(join(home, 'config.toml'), 'utf8');
+    expect(initializedConfig).toContain(config);
+    const editedConfig = initializedConfig.replace(
+      'startup_timeout_sec=123',
+      'startup_timeout_sec=456',
+    );
     const configuration = dialog.locator('.mcp-settings').filter({
       has: page.getByRole('heading', {
         name: 'Configuration, instructions and rules',
@@ -91,11 +102,10 @@ test('native local workflow controls: chunks/comments, exact config editing, reu
       .click();
     await configuration.getByRole('button', { name: 'Edit source', exact: true }).click();
     const source = configuration.getByLabel('Configuration source text');
-    await source.fill(config.replace('123', '456'));
+    await expect(source).toHaveValue(initializedConfig);
+    await source.fill(editedConfig);
     await configuration.getByRole('button', { name: 'Save reviewed source' }).click();
-    await expect
-      .poll(() => readFile(join(home, 'config.toml'), 'utf8'))
-      .toBe(config.replace('123', '456'));
+    await expect.poll(() => readFile(join(home, 'config.toml'), 'utf8')).toBe(editedConfig);
     const actions = dialog.locator('.mcp-settings').filter({
       has: page.getByRole('heading', { name: 'Project setup and reusable actions', exact: true }),
     });
@@ -142,6 +152,17 @@ test('native local workflow controls: chunks/comments, exact config editing, reu
     await page.screenshot({ path: '.test-data/local-workflows.png' });
     expect(errors).toEqual([]);
   } finally {
+    await app
+      ?.evaluate(({ dialog }) => {
+        const original = dialog.showMessageBox.bind(dialog);
+        dialog.showMessageBox = ((...args: any[]) => {
+          const options = args.at(-1);
+          if (options?.buttons?.includes('Discard drafts and quit'))
+            return Promise.resolve({ response: 1, checkboxChecked: false });
+          return original(...(args as Parameters<typeof original>));
+        }) as typeof dialog.showMessageBox;
+      })
+      .catch(() => {});
     await app?.close();
   }
 });
