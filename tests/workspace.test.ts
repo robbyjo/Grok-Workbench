@@ -38,6 +38,26 @@ test('a new project without Git is usable and refresh detects later repository i
   assert.ok(initialized.files.some((file) => file.path === 'hello.txt' && file.index === '?'));
 });
 
+test('file listings use canonical workspace-relative paths when the root is an alias', async () => {
+  const folder = await mkdtemp(join(tmpdir(), 'grok-files-alias-'));
+  const root = join(folder, 'project');
+  const alias = join(folder, 'project-alias');
+  await mkdir(root);
+  await mkdir(join(root, 'src'));
+  await writeFile(join(root, 'draft.txt'), 'original\n');
+  await writeFile(join(root, 'src', 'nested.txt'), 'nested\n');
+  await symlink(root, alias, process.platform === 'win32' ? 'junction' : 'dir');
+  const entries = await files(alias, '.');
+  assert.deepEqual(
+    entries.map((entry) => entry.path),
+    ['src', 'draft.txt'],
+  );
+  const nested = await files(alias, entries[0].path);
+  assert.equal(nested[0].path, join('src', 'nested.txt'));
+  assert.equal(await textFile(alias, entries[1].path), 'original\n');
+  assert.equal(await textFile(alias, nested[0].path), 'nested\n');
+});
+
 test('Git status and both diffs include real edits; worktrees preserve dirty original', async () => {
   const folder = await mkdtemp(join(tmpdir(), 'grok-git-'));
   const root = join(folder, 'repo');

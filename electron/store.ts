@@ -6,6 +6,7 @@ import {
   existsSync,
   readdirSync,
   statSync,
+  realpathSync,
 } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -456,6 +457,24 @@ export class Store {
   }
   openProject(path: string, name: string): Project {
     let project = this.state.projects.find((item) => item.path === path);
+    if (!project) {
+      // Preserve saved identities and draft keys when a picker expands an old
+      // Windows short path or another alias to its canonical folder.
+      let canonical: string | undefined;
+      try {
+        canonical = realpathSync(path);
+      } catch {
+        // Missing projects can still be retained in saved metadata.
+      }
+      if (canonical)
+        project = this.state.projects.find((item) => {
+          try {
+            return realpathSync(item.path) === canonical;
+          } catch {
+            return false;
+          }
+        });
+    }
     if (!project) {
       project = { id: randomUUID(), name, path };
       this.state.projects.push(project);

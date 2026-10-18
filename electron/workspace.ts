@@ -7,7 +7,8 @@ import { changes, indexRevision } from './git-actions';
 export { directory, inside } from './paths';
 export { git } from './git-runner';
 export async function files(root: string, path: string): Promise<FileItem[]> {
-  const target = await inside(root, path);
+  const canonicalRoot = await directory(root);
+  const target = await inside(canonicalRoot, path);
   const entries = await readdir(target, { withFileTypes: true });
   return entries
     .filter((entry) => !['.git', 'node_modules', '.DS_Store'].includes(entry.name))
@@ -17,7 +18,7 @@ export async function files(root: string, path: string): Promise<FileItem[]> {
     .slice(0, 1000)
     .map((entry) => ({
       name: entry.name,
-      path: relative(root, join(target, entry.name)),
+      path: relative(canonicalRoot, join(target, entry.name)),
       directory: entry.isDirectory(),
     }));
 }

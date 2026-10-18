@@ -4,7 +4,13 @@ Validation performed on Windows x64 on October 6–8, 2026 (America/New_York). C
 
 On October 9, the existing v0.7.0 release title became **Grok Workbench 0.7.0 (alpha)** and its GitHub prerelease flag was cleared so it could be marked Latest and appear in the repository sidebar. GitHub excludes prereleases from Latest. Its alpha/unsigned status and documented acceptance limits still apply. The release ID, tag/source target, asset IDs, sizes and SHA-256 digests are unchanged; no new executable or version was published. GitHub's latest-release endpoint resolves to v0.7.0.
 
-## Version 0.8.0 source work (unreleased, October 9)
+## October 18 release preparation
+
+[The first release-validation run](https://github.com/robbyjo/Grok-Workbench/actions/runs/39164166621) built the native engine and passed formatting, build/types and backend acceptance, but failed the search/project GUI scenario. File listings calculated paths relative to the saved alias rather than the canonical workspace, so Windows short TEMP paths produced incorrect editor paths. A junction-based regression reproduced the defect locally before the fix. Listings now use the canonical root; reopening the canonical folder also preserves the saved aliased project's identity, name, chats and draft keys.
+
+All **84 backend tests** pass locally, including the new file-listing regression and expanded project-identity coverage. The full aliased-project GUI scenario passes editing, draft retention, removal/restoration and canonical-folder reopening. CI now runs formatting/build and the focused backend/GUI alias checks before the expensive native compilation; full native and packaged acceptance still follow. A successful hosted run is required before publication.
+
+## Version 0.8.0 source work (October 9)
 
 The new source implements reviewed task → test → review, a lazy Monaco coding editor, compatible same-pinned-native-format engine upgrades with verified durable-profile backups, and gated CI signing/publication. The public v0.7.0 assets and tag are unchanged. Foundation enrollment/approval is pending: the owner has no SignPath account yet; GitHub MFA is confirmed, while SignPath MFA and signing-role confirmation are outstanding.
 

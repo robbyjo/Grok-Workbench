@@ -1,5 +1,5 @@
 import { test, expect, _electron as electron, type ElectronApplication } from '@playwright/test';
-import { mkdir, mkdtemp, writeFile, readFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, writeFile, readFile, symlink } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -7,8 +7,11 @@ test('native search jumps to messages and project removal retains files, drafts 
   await mkdir(resolve('.test-data'), { recursive: true });
   // Keep this non-Git project outside the source checkout: Git discovers ancestor repos.
   const data = await mkdtemp(join(tmpdir(), 'grok-organization-'));
-  const project = join(data, 'project');
-  await mkdir(project);
+  const physicalProject = join(data, 'project');
+  await mkdir(physicalProject);
+  // Windows CI's TEMP may use an 8.3 alias. Exercise an aliased root on every run.
+  const project = join(data, 'project-alias');
+  await symlink(physicalProject, project, process.platform === 'win32' ? 'junction' : 'dir');
   await writeFile(join(project, 'draft.txt'), 'original\n');
   const chat = (id: string, title: string, archived = false) => ({
     id,

@@ -44,16 +44,21 @@ jobs:
           icacls node_modules/electron/dist /grant '*S-1-15-2-1:(OI)(CI)(RX)' /T /Q
       - name: Verify pinned Grok runtime
         run: npm run runtime
+      - name: Formatting
+        run: npm run format:check
+      - name: Build and typecheck
+        run: npm run build
+      - name: Aliased project regression before native compilation
+        run: |
+          npx tsx --test tests/workspace.test.ts tests/search-projects.test.ts
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          npx playwright test tests/ui/search-projects.spec.ts
       - name: Build pinned embedded engine
         run: |
           rustup toolchain install 1.95.0 --profile minimal
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           rustup default 1.95.0
           npm run engine:build
-      - name: Formatting
-        run: npm run format:check
-      - name: Build and typecheck
-        run: npm run build
       - name: Backend and native MCP acceptance
         run: npm test
       - name: Native desktop acceptance

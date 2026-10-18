@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile } from 'node:fs/promises';
+import { mkdtemp, readFile, symlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Store } from '../electron/store';
@@ -140,7 +140,9 @@ test('project rename/remove/restore persists identities, transcripts, worktree p
   const folder = await mkdtemp(join(tmpdir(), 'grok-projects-'));
   const file = join(folder, 'state.json');
   const store = new Store(file);
-  const project = store.openProject(folder, 'Original');
+  const alias = folder + '-alias';
+  await symlink(folder, alias, process.platform === 'win32' ? 'junction' : 'dir');
+  const project = store.openProject(alias, 'Original');
   const thread = store.create(project.id, join(folder, 'worktree'));
   thread.archived = true;
   thread.sessionId = 'resume-me';
