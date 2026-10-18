@@ -67,6 +67,9 @@ test('native desktop: persisted chat, file/diff panels, terminal, and IPC bounda
     await page.screenshot({ path: '.test-data/desktop-welcome.png' });
     await page.getByRole('button', { name: 'Files', exact: true }).click();
     await page.getByRole('button', { name: 'hello.txt' }).click();
+    // Monaco's accessibility announcers remain after switching editor modes.
+    // Load it first so error assertions also cover that normal document state.
+    await expect(page.locator('.monaco-editor textarea').first()).toBeVisible();
     await page.getByRole('button', { name: 'Use plain text editor', exact: true }).click();
     const editor = page.getByRole('textbox', { name: 'Edit hello.txt', exact: true });
     await expect(editor).toHaveValue('Changed in the real filesystem\n');
@@ -168,7 +171,9 @@ test('native desktop: persisted chat, file/diff panels, terminal, and IPC bounda
     await writeFile(join(project, 'hello.txt'), 'External process edit\n');
     await editor.fill('Draft must survive conflict\n');
     await page.getByRole('button', { name: 'Save file', exact: true }).click();
-    await expect(page.getByRole('alert')).toContainText('File changed on disk');
+    await expect(page.locator('.file-editor').getByRole('alert')).toContainText(
+      'File changed on disk',
+    );
     await expect(editor).toHaveValue('Draft must survive conflict\n');
     expect(await readFile(join(project, 'hello.txt'), 'utf8')).toBe('External process edit\n');
     await page.getByRole('button', { name: 'Reload file', exact: true }).click();
@@ -312,6 +317,19 @@ test('native desktop: persisted chat, file/diff panels, terminal, and IPC bounda
     expect(saved.threads[0].pinned).toBe(true);
     expect(saved.threads[0].archived).toBe(false);
   } finally {
+    // A failed assertion must not hide its error behind this fixture's draft
+    // confirmation dialog during teardown.
+    await app
+      ?.evaluate(({ dialog }) => {
+        const original = dialog.showMessageBox.bind(dialog);
+        dialog.showMessageBox = ((...args: any[]) => {
+          const options = args.at(-1);
+          if (options?.buttons?.includes('Discard drafts and quit'))
+            return Promise.resolve({ response: 1, checkboxChecked: false });
+          return original(...(args as Parameters<typeof original>));
+        }) as typeof dialog.showMessageBox;
+      })
+      .catch(() => {});
     await app?.close();
   }
 });

@@ -48,17 +48,42 @@ jobs:
         run: npm run format:check
       - name: Build and typecheck
         run: npm run build
-      - name: Aliased project regression before native compilation
+      - name: Desktop regressions before native compilation
         run: |
           npx tsx --test tests/workspace.test.ts tests/search-projects.test.ts
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          npx playwright test tests/ui/search-projects.spec.ts
+          npx playwright test tests/ui/desktop.spec.ts tests/ui/search-projects.spec.ts
+      - name: Record native cache build image
+        id: native-image
+        run: ('identity=' + $env:ImageOS + '-' + $env:ImageVersion) | Add-Content -LiteralPath $env:GITHUB_OUTPUT -Encoding utf8
+      - name: Restore pinned Rust build cache
+        id: native-cache
+        continue-on-error: true
+        timeout-minutes: 5
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            native/studio-engine/target
+          key: native-${{ runner.os }}-${{ runner.arch }}-rust-1.95.0-${{ steps.native-image.outputs.identity }}-${{ hashFiles('native/studio-engine/Cargo.*', 'native/studio-engine/build.rs', 'native/studio-engine/src/**', 'native/studio-engine/patches/**', 'scripts/engine-*.cjs') }}
       - name: Build pinned embedded engine
         run: |
           rustup toolchain install 1.95.0 --profile minimal
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           rustup default 1.95.0
           npm run engine:build
+      - name: Preserve successful native compilation before acceptance
+        if: github.ref == 'refs/heads/main' && steps.native-cache.outputs.cache-hit != 'true'
+        continue-on-error: true
+        timeout-minutes: 5
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            native/studio-engine/target
+          key: ${{ steps.native-cache.outputs.cache-primary-key }}
       - name: Backend and native MCP acceptance
         run: npm test
       - name: Native desktop acceptance
