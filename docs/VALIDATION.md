@@ -1,8 +1,18 @@
 # Validation record
 
-Validation performed on Windows x64 on October 6–8, 2026 (America/New_York). Current version: **Grok Workbench 0.7.0**, with the Grok Rust library embedded instead of a packaged CLI. Earlier sections retain historical version-specific names and results.
+Current version: **Grok Workbench 0.8.0**, with the Grok Rust library embedded instead of a packaged CLI. Validation was performed on Windows x64; dates below use America/New_York. Earlier sections retain historical version-specific names and results.
 
-On October 9, the existing v0.7.0 release title became **Grok Workbench 0.7.0 (alpha)** and its GitHub prerelease flag was cleared so it could be marked Latest and appear in the repository sidebar. GitHub excludes prereleases from Latest. Its alpha/unsigned status and documented acceptance limits still apply. The release ID, tag/source target, asset IDs, sizes and SHA-256 digests are unchanged; no new executable or version was published. GitHub's latest-release endpoint resolves to v0.7.0.
+## Version 0.8.0 publication (October 18)
+
+[v0.8.0](https://github.com/robbyjo/Grok-Workbench/releases/tag/v0.8.0) is published as **Grok Workbench 0.8.0 (alpha)** and GitHub Latest. Its immutable tag points to `44b01902c443b70dd37ee91735e04243d33d8ee4`. [Windows CI](https://github.com/robbyjo/Grok-Workbench/actions/runs/39176309159) passed formatting/build/types, the focused desktop regressions, **83 backend tests with one optional historical-portable fixture skipped**, **eight source and eight packaged GUI scenarios**, actual portable launch/relocation/profile persistence, and actual replacement/restart/rollback. No signed or external-provider acceptance is implied.
+
+The unsigned Windows x64 executable is **146,250,933 bytes**, SHA-256 **`6bda8f277e778a795f5c75d37c41f7b10d3abc4271fef4c8cab841c7a0cfc21b`**. Its PE product/version are Grok Workbench / 0.8.0 and Authenticode is **NotSigned**. Embedded engine SHA-256: `a02fea4ede69e58706a04015a8e0ea03cd2ba6fa9948bf49908948f2541f5616`. The executable, checksum and format-2 manifest matched the exact successful CI artifact and GitHub's server-computed asset digests before publication. All three public downloads were then hashed independently and matched again. The v0.7.0 assets retain their original hashes and sizes.
+
+[The publication workflow](https://github.com/robbyjo/Grok-Workbench/actions/runs/39179270421) reserved the correct tag and uploaded all three files into draft release `416786097`, then stopped because the REST tag lookup returned 404 for the draft. The existing draft was verified independently by numeric release ID against the successful CI artifact, including every asset hash/size, manifest and executable identity, then published without replacing assets or moving the tag. The publisher now resolves drafts through the CLI and validates their numeric ID, tag, draft state and exact tested source; two focused policy tests cover valid and mismatched identities. All **85 backend tests passed locally** after that publisher-only repair, which does not change the released binary or tag. A second end-to-end publication of the repaired helper has not been performed.
+
+Upgrading from 0.7.0 or earlier requires replacing the executable manually while retaining the adjacent **Grok Desktop Data** folder. The 0.7.0 updater cannot read the new format-2 manifest. Signing, pristine-machine/reboot/token-expiry acceptance, external HTTP OAuth lifecycle and live containment remain the distinct open gates described below.
+
+On October 9, the existing v0.7.0 release title became **Grok Workbench 0.7.0 (alpha)** and its GitHub prerelease flag was cleared so it could be marked Latest and appear in the repository sidebar. GitHub excludes prereleases from Latest. Its alpha/unsigned status and documented acceptance limits still apply. The release ID, tag/source target, asset IDs, sizes and SHA-256 digests were unchanged; no new executable or version was published by that metadata edit. GitHub's latest-release endpoint resolved to v0.7.0 at that time; it now resolves to v0.8.0.
 
 ## October 18 release preparation
 

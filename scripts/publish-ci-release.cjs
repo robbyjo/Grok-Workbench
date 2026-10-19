@@ -26,6 +26,17 @@ function validateRun(run, head) {
       'Release requires a successful trusted Windows run for this exact main commit.',
     );
 }
+function validateDraftRelease(release, tag, head) {
+  if (
+    !Number.isSafeInteger(release.id) ||
+    release.id <= 0 ||
+    release.tag_name !== tag ||
+    release.target_commitish !== head ||
+    release.draft !== true
+  )
+    throw new Error('Unexpected draft release identity.');
+  return release.id;
+}
 async function main() {
   const runId = process.env.GROK_RELEASE_RUN_ID,
     head = process.env.GROK_RELEASE_HEAD,
@@ -134,7 +145,14 @@ async function main() {
     '--notes-file',
     notes,
   );
-  const release = api(`repos/${repository}/releases/tags/${tag}`);
+  // GitHub's tag endpoint can return 404 for a draft. The CLI resolves drafts
+  // through its authenticated listing fallback; bind all later reads to its ID.
+  const draftId = JSON.parse(
+    gh('release', 'view', tag, '--repo', repository, '--json', 'databaseId'),
+  ).databaseId;
+  if (!Number.isSafeInteger(draftId) || draftId <= 0) throw new Error('Invalid draft release ID.');
+  const release = api(`repos/${repository}/releases/${draftId}`);
+  validateDraftRelease(release, tag, head);
   const tagged = api(`repos/${repository}/git/ref/tags/${tag}`);
   if (tagged.object?.type !== 'commit' || tagged.object.sha !== head)
     throw new Error('Release tag does not match the tested source. Release remains draft.');
@@ -145,11 +163,11 @@ async function main() {
       throw new Error('Uploaded asset verification failed. Release remains draft for repair.');
   }
   gh('release', 'edit', tag, '--repo', repository, '--draft=false');
-  const published = api(`repos/${repository}/releases/tags/${tag}`);
+  const published = api(`repos/${repository}/releases/${draftId}`);
   if (published.draft) throw new Error('Publication was not confirmed.');
   console.log(published.html_url);
 }
-module.exports = { validateRun };
+module.exports = { validateRun, validateDraftRelease };
 if (require.main === module)
   main().catch((e) => {
     console.error(e.message);
