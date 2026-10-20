@@ -2,15 +2,15 @@
 
 A Windows-first desktop application with **Grok Build built in**, supporting Grok account OAuth and xAI API keys. The target is comparable local coding workflows to Codex wherever Grok supports them. This is an independent Apache-2.0 project; full workflow parity is still being developed.
 
-**0.8.0 alpha · Windows 10/11 x64 · portable executable.** macOS, Linux and ARM64 are future targets. See [TODO.md](TODO.md), the [parity audit](docs/PARITY.md), and [validation evidence](docs/VALIDATION.md).
+**0.8.1 alpha · Windows 10/11 x64 · portable executable.** macOS, Linux and ARM64 are future targets. See [TODO.md](TODO.md), the [parity audit](docs/PARITY.md), and [validation evidence](docs/VALIDATION.md).
 
-[Download the Windows portable executable](https://github.com/robbyjo/Grok-Workbench/releases/download/v0.8.0/Grok-Workbench-0.8.0-Portable.exe) · [SHA-256 checksum](https://github.com/robbyjo/Grok-Workbench/releases/download/v0.8.0/Grok-Workbench-0.8.0-Portable.exe.sha256) · [Release notes](https://github.com/robbyjo/Grok-Workbench/releases/tag/v0.8.0)
+[Download the Windows portable executable](https://github.com/robbyjo/Grok-Workbench/releases/download/v0.8.1/Grok-Workbench-0.8.1-Portable.exe) · [SHA-256 checksum](https://github.com/robbyjo/Grok-Workbench/releases/download/v0.8.1/Grok-Workbench-0.8.1-Portable.exe.sha256) · [Release notes](https://github.com/robbyjo/Grok-Workbench/releases/tag/v0.8.1)
 
-**New in 0.8.0:** [task → test → review](docs/TASK-WORKFLOW.md), a [Monaco coding editor](docs/CODE-EDITOR.md), verified profile backups for compatible engine upgrades and a [CI artifact publication pipeline](docs/RELEASE-GATES.md). [Code signing policy](docs/CODE-SIGNING-POLICY.md) · [Privacy](docs/PRIVACY.md); SignPath enrollment/approval remains pending.
+**New in 0.8.1:** configurable UI and log/terminal font sizes, light/dark backgrounds, and a fix for repeated approval prompts after selecting “don't ask again”. See [0.8.1 changes](docs/RELEASE-0.8.1.md). Includes the [task → test → review](docs/TASK-WORKFLOW.md), [Monaco editor](docs/CODE-EDITOR.md), profile backup and CI publication workflows introduced in 0.8.0. [Code signing policy](docs/CODE-SIGNING-POLICY.md) · [Privacy](docs/PRIVACY.md); SignPath enrollment/approval remains pending.
 
 ## Run on Windows
 
-1. Put `Grok-Workbench-0.8.0-Portable.exe` in a writable folder and open it. Electron, Node, the native Grok engine and its app-local Microsoft C++ runtime are included. There is no Grok CLI installation step.
+1. Put `Grok-Workbench-0.8.1-Portable.exe` in a writable folder and open it. Electron, Node, the native Grok engine and its app-local Microsoft C++ runtime are included. There is no Grok CLI installation step.
 2. Click the **account circle / Sign in to Grok** directly above **Settings**. You can sign in before opening a project. Choose **Sign in with Grok (OAuth)** and complete browser sign-in, or enter an xAI API key locally and save it. OAuth is saved in your Grok profile; API keys default to Windows encrypted storage. Both are reused after application restarts and Windows reboots on the same Windows account/machine. Uncheck **Remember with Windows encrypted storage** for a session-only API key. Authentication is also available in **Settings → Authentication** without a selected chat.
 3. Successful OAuth sign-in closes the account/settings dialog. If Settings has an unsaved configuration draft, its confirmation announces sign-in success and lets you keep editing. Open a project and send a prompt. Tool approvals and project-trust requests appear above the composer. **Stop turn** cancels the turn. Git and your project's development tools are needed for the corresponding workflows.
 4. Open **Settings → MCP servers** to add a STDIO command or HTTP/SSE endpoint, test the connection, edit configuration, and inspect effective tools/policies. Reconnect after changing configuration. MCP servers can require their own Node/Python/tools and provider sign-in. The optional [official GitHub OAuth MCP integration](docs/GITHUB-MCP.md) has real identity-check acceptance.
@@ -29,6 +29,10 @@ Free SignPath Foundation signing is being evaluated; the project has not applied
 - Terminals: multiple PowerShell/pwsh/cmd/Git Bash tabs, bounded persistent scrollback, and explicit editable terminal context for the next agent prompt.
 - Integrations: original Grok tools, MCP, OAuth, skill/plugin lifecycle, instruction/rule/hook editors, effective policy views and reviewed project setup/actions.
 - Desktop: usage/cost indicators, context display when reported by the engine, opt-in notifications, configurable shortcuts, keyboard focus and reduced-motion support; diagnostics, bounded history storage and renderer crash recovery.
+
+**Settings → Appearance** provides dark/light backgrounds, UI text scaling from 100–175%, and an independent 12–24 px font size for the chat/log, tool output, diagnostics and terminal. Choose **Save appearance** to apply immediately and retain it after restart. UI scaling also resizes editor text; open terminals and editors update without losing their contents.
+
+When an approval offers **“Yes, and don't ask again for anything”**, selecting it enables the engine's always-approve mode and remembers it for that chat across reconnects/restarts. Use **Ask for approvals again** beside the chat controls to turn it off. **Allow once**, command/tool-specific grants and project trust retain their separate scopes; managed rules and engine-enforced restrictions still apply.
 
 ## Media and attachments
 

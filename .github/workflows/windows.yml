@@ -50,9 +50,9 @@ jobs:
         run: npm run build
       - name: Desktop regressions before native compilation
         run: |
-          npx tsx --test tests/workspace.test.ts tests/search-projects.test.ts
+          npx tsx --test tests/agent.test.ts tests/workspace.test.ts tests/search-projects.test.ts
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          npx playwright test tests/ui/desktop.spec.ts tests/ui/local-workflows.spec.ts tests/ui/search-projects.spec.ts
+          npx playwright test tests/ui/appearance.spec.ts tests/ui/desktop.spec.ts tests/ui/local-workflows.spec.ts tests/ui/search-projects.spec.ts
       - name: Record native cache build image
         id: native-image
         run: ('identity=' + $env:ImageOS + '-' + $env:ImageVersion) | Add-Content -LiteralPath $env:GITHUB_OUTPUT -Encoding utf8

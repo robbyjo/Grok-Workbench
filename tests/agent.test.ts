@@ -98,6 +98,7 @@ test('allow once, then resume without duplicating saved transcript', async () =>
     await until(() => agents.permissionsSnapshot().length > 0);
     agents.approve(agents.permissionsSnapshot()[0].id, 'allow-once');
     await prompt;
+    assert.equal(thread.alwaysApprove, undefined);
     const before = thread.entries.length;
     agents.disconnect(thread.id);
     await agents.connect(thread.id);
@@ -110,6 +111,53 @@ test('allow once, then resume without duplicating saved transcript', async () =>
     assert.equal(thread.session?.configOptions[0].currentValue, 'fixture-model');
     await agents.authenticate(thread.id, 'fixture-auth');
     assert.equal(thread.status, 'idle');
+  } finally {
+    agents.shutdown();
+    store.flush();
+  }
+});
+
+test('do not ask again enables the engine mode, persists only this chat, survives reconnect, and can be revoked', async () => {
+  const { agents, thread, store, events } = setup('remember-approval');
+  try {
+    const prompt = agents.prompt(thread.id, 'Remember my permission', []);
+    await until(() => agents.permissionsSnapshot().length === 1);
+    agents.approve(agents.permissionsSnapshot()[0].id, 'enable-always-approve');
+    await prompt;
+    assert.equal(thread.alwaysApprove, true);
+    // The fixture only sets this after receiving the mode-change notification.
+    assert.equal(
+      thread.entries.find((entry) => entry.type === 'tool')?.data?.rawOutput.alwaysApprove,
+      true,
+    );
+    assert.equal(store.create('p', thread.cwd).alwaysApprove, undefined);
+    const reopened = new Store(join(thread.cwd, 'state.json'));
+    assert.equal(reopened.thread(thread.id).alwaysApprove, true);
+    const restarted = new Agents(
+      reopened,
+      () => {},
+      (cwd) => new RpcProcess(process.execPath, [fixture, 'remember-approval'], cwd),
+    );
+    try {
+      await restarted.prompt(thread.id, 'Continue after app restart', []);
+      assert.equal(restarted.permissionsSnapshot().length, 0);
+      assert.ok(
+        reopened.thread(thread.id).entries.some((entry) => entry.text === 'Always-approve active'),
+      );
+    } finally {
+      restarted.shutdown();
+    }
+    agents.disconnect(thread.id);
+    await agents.prompt(thread.id, 'Continue after reconnect', []);
+    assert.equal(agents.permissionsSnapshot().length, 0);
+    assert.equal(events.filter((e) => e.type === 'permission').length, 1);
+    assert.ok(thread.entries.some((entry) => entry.text === 'Always-approve active'));
+    agents.resetApprovalMode(thread.id);
+    const next = agents.prompt(thread.id, 'Require approval again', []);
+    await until(() => agents.permissionsSnapshot().length === 1);
+    agents.approve(agents.permissionsSnapshot()[0].id, 'allow-once');
+    await next;
+    assert.equal(thread.alwaysApprove, false);
   } finally {
     agents.shutdown();
     store.flush();

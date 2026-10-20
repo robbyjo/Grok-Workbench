@@ -1,6 +1,14 @@
 # Validation record
 
-Current version: **Grok Workbench 0.8.0**, with the Grok Rust library embedded instead of a packaged CLI. Validation was performed on Windows x64; dates below use America/New_York. Earlier sections retain historical version-specific names and results.
+Current source version: **Grok Workbench 0.8.1**, with the Grok Rust library embedded instead of a packaged CLI. Validation was performed on Windows x64; dates below use America/New_York. Earlier sections retain historical version-specific names and results.
+
+## October 20 appearance and remembered approvals (local source)
+
+The source build/typechecks, formatting and diff checks pass. All **15 agent regressions** and the **appearance, rich editor and desktop GUI scenarios** pass. The appearance scenario verifies independent UI/log scaling, both themes, live updates to an open Monaco editor and terminal, retained shell state, invalid preference rejection, reset, and persistence across a full application restart. Screenshots were inspected for light and enlarged dark settings.
+
+Release preparation for 0.8.1 also passes the complete **86-test backend suite** locally. Hosted native, packaged and portable acceptance remains required before publication.
+
+The approval fixture reproduces the engine's special `enable-always-approve` option: its selected response alone grants one action. Workbench now also sends `x.ai/yolo_mode_changed`, saves the choice per chat, reapplies it after reconnect/restart, and offers an explicit return to prompting. Tests verify the mode notification, saved-state restoration, unrelated-chat isolation and revocation; allow-once/cancellation/trust regressions still pass. This is protocol-fixture validation, not a live model/tool approval run. These changes have not been packaged or published.
 
 ## Version 0.8.0 publication (October 18)
 

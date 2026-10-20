@@ -36,6 +36,7 @@ import { Account } from './account';
 import { EmbeddedRpc } from './embedded-rpc';
 import { Media, generation, mediaType } from './media';
 import { validateShortcuts } from '../shared/shortcuts';
+import { validateAppearance } from '../shared/appearance';
 import {
   bundledRuntime,
   desktopDataDirectory,
@@ -490,6 +491,10 @@ async function dispatch(method: string, args: Wire) {
     case 'drafts:save':
       return store.drafts(args.value);
     case 'preferences:save': {
+      const appearance =
+        args.appearance === undefined
+          ? store.state.settings.appearance
+          : validateAppearance(args.appearance);
       const shortcuts = validateShortcuts(args.shortcuts ?? store.state.settings.shortcuts ?? {});
       const budget = args.storageMiB ?? store.state.settings.storageMiB ?? 512;
       const aggregate = profileBudget(args.profileMiB ?? store.state.settings.profileMiB ?? 4096);
@@ -507,6 +512,7 @@ async function dispatch(method: string, args: Wire) {
       store.history.budget(budget);
       store.state.settings = {
         ...store.state.settings,
+        appearance,
         shortcuts,
         storageMiB: budget,
         profileMiB: aggregate,
@@ -1056,6 +1062,8 @@ async function dispatch(method: string, args: Wire) {
       return agents.authenticate(thread().id, string(args.methodId, 'authentication method', 100));
     case 'permissions':
       return agents.permissionsSnapshot();
+    case 'permission:reset-mode':
+      return agents.resetApprovalMode(thread().id);
     case 'permission:answer':
       return agents.approve(
         string(args.permissionId, 'approval ID', 100),

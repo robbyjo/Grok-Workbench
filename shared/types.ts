@@ -48,6 +48,7 @@ export interface Thread {
   title: string;
   cwd: string;
   sessionId?: string;
+  alwaysApprove?: boolean;
   status: Status;
   archived: boolean;
   pinned: boolean;
@@ -75,6 +76,7 @@ export interface Thread {
 }
 export interface Settings {
   executable: string;
+  appearance?: import('./appearance').Appearance;
   authMode?: 'auto' | 'oauth' | 'api';
   storageMiB?: number;
   profileMiB?: number;

@@ -1,4 +1,6 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { readAppearance } from '../shared/appearance';
+import { AppearanceContext } from './appearance';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
@@ -55,6 +57,7 @@ import GitChanges from './GitChanges';
 import TaskDashboard, { UsageIndicators } from './TaskDashboard';
 import Organization from './Organization';
 import DesktopPreferences from './DesktopPreferences';
+import AppearanceSettings from './AppearanceSettings';
 import AuthenticationSettings from './AuthenticationSettings';
 import AccountControl from './AccountControl';
 import MediaStudio, { MediaPreview } from './MediaStudio';
@@ -231,8 +234,14 @@ function ConfigControls({
         className="permission-label"
         title="Grok's configured permission rules apply. Approval prompts are surfaced here."
       >
-        <ShieldCheck size={13} /> Grok permissions
+        <ShieldCheck size={13} />{' '}
+        {thread.alwaysApprove ? 'Always approve · this chat' : 'Grok permissions'}
       </span>
+      {thread.alwaysApprove && (
+        <button onClick={() => void action('permission:reset-mode', { id: thread.id })}>
+          Ask for approvals again
+        </button>
+      )}
     </div>
   );
 }
@@ -240,6 +249,13 @@ function ConfigControls({
 export default function App() {
   useAccessibleDialogs();
   const [state, setState] = useState<State>(initial);
+  const appearance = readAppearance(state.settings.appearance);
+  useLayoutEffect(() => {
+    const root = document.documentElement;
+    root.dataset.theme = appearance.theme;
+    root.style.setProperty('--ui-font-scale', String(appearance.uiScale / 100));
+    root.style.setProperty('--log-font-size', `${appearance.logFontSize}px`);
+  }, [appearance.theme, appearance.uiScale, appearance.logFontSize]);
   const [activeId, setActiveId] = useState<string>();
   const [projectId, setProjectId] = useState<string>();
   const [search, setSearch] = useState(false);
@@ -1058,6 +1074,14 @@ export default function App() {
                     <span>{permission.toolCall.kind}</span>
                   </div>
                   <p>{permission.toolCall.title ?? 'Tool execution'}</p>
+                  {permission.options.some(
+                    (option) => option.optionId === 'enable-always-approve',
+                  ) && (
+                    <p className="muted">
+                      “Don't ask again for anything” is remembered for this chat, including after
+                      restart. You can turn approval prompts back on with “Ask for approvals again”.
+                    </p>
+                  )}
                   <details>
                     <summary>Review action</summary>
                     <pre>{pretty(permission.toolCall).slice(0, 80_000)}</pre>
@@ -1254,20 +1278,22 @@ export default function App() {
                     <X size={14} />
                   </button>
                 </div>
-                <Suspense fallback={<div className="muted">Opening terminal…</div>}>
-                  <TerminalPanel
-                    key={thread.id}
-                    id={thread.id}
-                    error={setError}
-                    context={(text) => {
-                      setDrafts((value) => ({
-                        ...value,
-                        [draftKey]: (value[draftKey] ?? '') + '\n\n' + text,
-                      }));
-                      composer.current?.focus();
-                    }}
-                  />
-                </Suspense>
+                <AppearanceContext.Provider value={appearance}>
+                  <Suspense fallback={<div className="muted">Opening terminal…</div>}>
+                    <TerminalPanel
+                      key={thread.id}
+                      id={thread.id}
+                      error={setError}
+                      context={(text) => {
+                        setDrafts((value) => ({
+                          ...value,
+                          [draftKey]: (value[draftKey] ?? '') + '\n\n' + text,
+                        }));
+                        composer.current?.focus();
+                      }}
+                    />
+                  </Suspense>
+                </AppearanceContext.Provider>
               </div>
             )}
           </section>
@@ -1351,15 +1377,20 @@ export default function App() {
                     </>
                   )}
                   {tab === 'files' && (
-                    <WorkspaceFiles
-                      key={thread.cwd}
-                      thread={thread}
-                      drafts={fileDrafts}
-                      busy={busy}
-                      update={(path, draft) =>
-                        setFileDrafts((items) => ({ ...items, [thread.cwd + '\0' + path]: draft }))
-                      }
-                    />
+                    <AppearanceContext.Provider value={appearance}>
+                      <WorkspaceFiles
+                        key={thread.cwd}
+                        thread={thread}
+                        drafts={fileDrafts}
+                        busy={busy}
+                        update={(path, draft) =>
+                          setFileDrafts((items) => ({
+                            ...items,
+                            [thread.cwd + '\0' + path]: draft,
+                          }))
+                        }
+                      />
+                    </AppearanceContext.Provider>
                   )}
                 </>
               )}
@@ -1416,6 +1447,7 @@ export default function App() {
                 <X size={18} />
               </button>
             </div>
+            <AppearanceSettings state={state} />
             <h3>Grok engine</h3>
             <p>
               The built-in engine includes Grok Build’s agent, OAuth/API authentication, project
@@ -1473,9 +1505,10 @@ export default function App() {
             <div className="runtime-help">
               <h4>Execution boundaries</h4>
               <p>
-                Grok controls tool permissions and project trust. The GUI presents approval requests
-                without enabling always-approve. Grok currently has no OS sandbox on Windows. The
-                interactive terminal runs as your Windows user.
+                Grok controls tool permissions and project trust. Choosing “don't ask again for
+                anything” enables always-approve for that chat until you turn approval prompts back
+                on. Grok currently has no OS sandbox on Windows. The interactive terminal runs as
+                your Windows user.
               </p>
             </div>
             <McpSettings thread={thread} />

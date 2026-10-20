@@ -3,6 +3,7 @@ const scenario = process.argv[2] ?? 'normal';
 let promptId;
 let sessionId = 'fixture-session';
 let permission = false;
+let alwaysApprove = false;
 const send = (value) => process.stdout.write(JSON.stringify({ jsonrpc: '2.0', ...value }) + '\n');
 const result = (id, result) => send({ id, result });
 const update = (update, id = sessionId) =>
@@ -42,6 +43,8 @@ createInterface({ input: process.stdin }).on('line', (line) => {
       authMethods: [{ id: 'fixture-auth', name: 'Fixture login' }],
     });
   } else if (message.method === 'session/new' || message.method === 'session/load') {
+    if (typeof message.params._meta?.yoloMode === 'boolean')
+      alwaysApprove = message.params._meta.yoloMode;
     if (message.method === 'session/load') {
       sessionId = message.params.sessionId;
       update({
@@ -68,6 +71,8 @@ createInterface({ input: process.stdin }).on('line', (line) => {
           configKinds: ['hooks', 'mcp'],
         },
       });
+  } else if (message.method === 'x.ai/yolo_mode_changed') {
+    alwaysApprove = message.params.yolo_mode === true;
   } else if (message.method === 'authenticate') result(message.id, {});
   else if (message.method === 'session/set_mode') result(message.id, {});
   else if (message.method === 'session/set_config_option')
@@ -76,6 +81,14 @@ createInterface({ input: process.stdin }).on('line', (line) => {
     });
   else if (message.method === 'session/prompt') {
     promptId = message.id;
+    if (scenario === 'remember-approval' && alwaysApprove) {
+      update({
+        sessionUpdate: 'agent_message_chunk',
+        content: { type: 'text', text: 'Always-approve active' },
+      });
+      result(promptId, { stopReason: 'end_turn' });
+      return;
+    }
     update(
       { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'Wrong chat data' } },
       'foreign-session',
@@ -101,6 +114,15 @@ createInterface({ input: process.stdin }).on('line', (line) => {
         options: [
           { optionId: 'allow-once', name: 'Allow once', kind: 'allow_once' },
           { optionId: 'reject-once', name: 'Reject once', kind: 'reject_once' },
+          ...(scenario === 'remember-approval'
+            ? [
+                {
+                  optionId: 'enable-always-approve',
+                  name: "Yes, and don't ask again for anything (always-approve mode)",
+                  kind: 'allow_once',
+                },
+              ]
+            : []),
         ],
       },
     });
@@ -111,7 +133,7 @@ createInterface({ input: process.stdin }).on('line', (line) => {
       sessionUpdate: 'tool_call_update',
       toolCallId: 'tool-1',
       status: selected === 'allow-once' ? 'completed' : 'failed',
-      rawOutput: { selected: selected ?? 'cancelled' },
+      rawOutput: { selected: selected ?? 'cancelled', alwaysApprove },
     });
     result(promptId, {
       stopReason:

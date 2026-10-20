@@ -208,6 +208,9 @@ export class Agents {
           ...(thread.sessionId ? { sessionId: thread.sessionId } : {}),
           cwd: thread.cwd,
           mcpServers: [],
+          ...(thread.alwaysApprove !== undefined
+            ? { _meta: { yoloMode: thread.alwaysApprove } }
+            : {}),
         },
         60_000,
       );
@@ -217,6 +220,7 @@ export class Agents {
         thread.sessionId = result.sessionId;
       }
       thread.session = { ...result, agent: publicAgent(connection.initialized), connected: true };
+      if (thread.alwaysApprove !== undefined) this.notifyApprovalMode(id, thread.alwaysApprove);
       thread.status = this.permissionsSnapshot().some((item) => item.threadId === id)
         ? 'approval'
         : 'idle';
@@ -566,11 +570,30 @@ export class Agents {
   permissionsSnapshot() {
     return [...this.permissions.values()].map((item) => item.permission);
   }
+  private notifyApprovalMode(id: string, enabled: boolean) {
+    this.connections.get(id)?.rpc.notify('x.ai/yolo_mode_changed', {
+      sessionId: this.store.thread(id).sessionId,
+      yolo_mode: enabled,
+      auto_mode: false,
+      permission_mode: enabled ? 'always-approve' : 'ask',
+    });
+  }
+  resetApprovalMode(id: string) {
+    const thread = this.store.thread(id);
+    this.notifyApprovalMode(id, false);
+    thread.alwaysApprove = false;
+    this.store.flush();
+  }
   approve(permissionId: string, optionId?: string) {
     const pending = this.permissions.get(permissionId);
     if (!pending) throw new Error('Approval is no longer pending.');
     if (optionId && !pending.permission.options.some((option) => option.optionId === optionId))
       throw new Error('Invalid approval option.');
+    const enableAlwaysApprove =
+      pending.permission.kind !== 'trust' && optionId === 'enable-always-approve';
+    // Grok maps this special option to AllowOnce. The client must also switch
+    // the engine mode; sending the selected response alone asks again next time.
+    if (enableAlwaysApprove) this.notifyApprovalMode(pending.permission.threadId, true);
     pending.rpc.respond(
       pending.rpcId,
       pending.permission.kind === 'trust'
@@ -580,9 +603,11 @@ export class Agents {
     this.permissions.delete(permissionId);
     this.emit({ type: 'permission-closed', id: permissionId });
     const thread = this.store.thread(pending.permission.threadId);
+    if (enableAlwaysApprove) thread.alwaysApprove = true;
     if (!this.permissionsSnapshot().some((item) => item.threadId === thread.id))
       thread.status = this.connections.get(thread.id)?.turn ? 'running' : 'idle';
     this.store.touch();
+    if (enableAlwaysApprove) this.store.flush();
   }
   private clearPermissions(id: string, respond: boolean) {
     for (const [key, pending] of this.permissions)

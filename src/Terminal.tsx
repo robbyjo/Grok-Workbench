@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import '@xterm/xterm/css/xterm.css';
+import { terminalTheme, useAppearance } from './appearance';
 function TerminalSurface({
   id,
   terminalId,
@@ -12,18 +13,15 @@ function TerminalSurface({
   error: (message: string) => void;
 }) {
   const element = useRef<HTMLDivElement>(null);
+  const appearance = useAppearance();
+  const surface = useRef<{ terminal: Terminal; resize: () => void } | undefined>(undefined);
   useEffect(() => {
     const terminal = new Terminal({
       fontFamily: 'Cascadia Code, Consolas, monospace',
-      fontSize: 12,
+      fontSize: appearance.logFontSize,
       cursorBlink: true,
       scrollback: 5000,
-      theme: {
-        background: '#111315',
-        foreground: '#d0d5d8',
-        cursor: '#a8d9bd',
-        selectionBackground: '#3b5147',
-      },
+      theme: terminalTheme(appearance.theme),
     });
     const fit = new FitAddon();
     terminal.loadAddon(fit);
@@ -66,6 +64,7 @@ function TerminalSurface({
       }
     };
     const observer = new ResizeObserver(resize);
+    surface.current = { terminal, resize };
     observer.observe(element.current!);
     return () => {
       disposed = true;
@@ -73,8 +72,15 @@ function TerminalSurface({
       unsubscribe();
       input.dispose();
       terminal.dispose();
+      surface.current = undefined;
     };
   }, [id, terminalId]);
+  useEffect(() => {
+    if (!surface.current) return;
+    surface.current.terminal.options.fontSize = appearance.logFontSize;
+    surface.current.terminal.options.theme = terminalTheme(appearance.theme);
+    surface.current.resize();
+  }, [appearance.logFontSize, appearance.theme]);
   return <div className="terminal-surface" ref={element} />;
 }
 export default function TerminalPanel({

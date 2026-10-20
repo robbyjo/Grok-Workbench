@@ -109,6 +109,7 @@ const methods = new Set([
   'agent:authenticate',
   'permissions',
   'permission:answer',
+  'permission:reset-mode',
   'settings:save',
   'settings:executable',
   'files:list',

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useAppearance } from './appearance';
 import * as monaco from 'monaco-editor';
 import EditorWorker from 'monaco-editor/editor/editor.worker?worker';
 import TypeScriptWorker from 'monaco-editor/language/typescript/ts.worker?worker';
@@ -64,6 +65,7 @@ export default function CodeEditor({
   location?: { line?: number; column?: number };
   navigate: (path: string, location?: { line?: number; column?: number }) => void;
 }) {
+  const appearance = useAppearance();
   const container = useRef<HTMLDivElement>(null),
     view = useRef<monaco.editor.IStandaloneCodeEditor | undefined>(undefined),
     callbacks = useRef({ change, save, navigate });
@@ -86,11 +88,11 @@ export default function CodeEditor({
     models.push(model);
     const editor = monaco.editor.create(container.current!, {
       model,
-      theme: 'vs-dark',
+      theme: appearance.theme === 'light' ? 'vs' : 'vs-dark',
       automaticLayout: true,
       minimap: { enabled: false },
       ariaLabel: `Code editor ${path}`,
-      fontSize: 13,
+      fontSize: (13 * appearance.uiScale) / 100,
       scrollBeyondLastLine: false,
       wordWrap: 'off',
       accessibilitySupport: 'auto',
@@ -181,6 +183,10 @@ export default function CodeEditor({
       for (const model of models) model.dispose();
     };
   }, [id, path]);
+  useEffect(() => {
+    view.current?.updateOptions({ fontSize: (13 * appearance.uiScale) / 100 });
+    monaco.editor.setTheme(appearance.theme === 'light' ? 'vs' : 'vs-dark');
+  }, [appearance.uiScale, appearance.theme]);
   useEffect(() => {
     const model = view.current?.getModel();
     if (model && model.getValue() !== text) {

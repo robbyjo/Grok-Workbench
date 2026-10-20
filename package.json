@@ -1,6 +1,6 @@
 {
   "name": "grok-workbench",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "private": true,
   "description": "Windows-first desktop client for Grok Build",
   "author": "Grok Workbench contributors",
