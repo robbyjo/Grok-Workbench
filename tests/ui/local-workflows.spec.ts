@@ -80,6 +80,7 @@ test('native local workflow controls: chunks/comments, exact config editing, reu
     expect(git(['diff', '--cached'])).not.toContain('LAST_EDIT');
     await page.getByRole('button', { name: 'Settings', exact: true }).click();
     const dialog = page.getByRole('dialog', { name: 'Settings', exact: true });
+    await dialog.getByRole('tab', { name: 'Integrations', exact: true }).click();
     // Grok may initialize its marketplace fields on the first MCP inventory.
     // Wait for that writer before reviewing the exact configuration snapshot.
     await expect(
@@ -91,6 +92,7 @@ test('native local workflow controls: chunks/comments, exact config editing, reu
       'startup_timeout_sec=123',
       'startup_timeout_sec=456',
     );
+    await dialog.getByRole('tab', { name: 'Configuration', exact: true }).click();
     const configuration = dialog.locator('.mcp-settings').filter({
       has: page.getByRole('heading', {
         name: 'Configuration, instructions and rules',
@@ -104,8 +106,13 @@ test('native local workflow controls: chunks/comments, exact config editing, reu
     const source = configuration.getByLabel('Configuration source text');
     await expect(source).toHaveValue(initializedConfig);
     await source.fill(editedConfig);
+    await dialog.getByRole('tab', { name: 'Appearance', exact: true }).click();
+    await expect(source).not.toBeVisible();
+    await dialog.getByRole('tab', { name: 'Configuration', exact: true }).click();
+    await expect(source).toHaveValue(editedConfig);
     await configuration.getByRole('button', { name: 'Save reviewed source' }).click();
     await expect.poll(() => readFile(join(home, 'config.toml'), 'utf8')).toBe(editedConfig);
+    await dialog.getByRole('tab', { name: 'Projects & sessions', exact: true }).click();
     const actions = dialog.locator('.mcp-settings').filter({
       has: page.getByRole('heading', { name: 'Project setup and reusable actions', exact: true }),
     });
@@ -129,6 +136,7 @@ test('native local workflow controls: chunks/comments, exact config editing, reu
       .toBe(original);
     await expect(create).not.toBeVisible();
     await page.getByRole('button', { name: 'Settings', exact: true }).click();
+    await page.getByRole('tab', { name: 'Projects & sessions', exact: true }).click();
     const worktrees = page
       .getByRole('dialog', { name: 'Settings', exact: true })
       .locator('.mcp-settings')
@@ -138,6 +146,7 @@ test('native local workflow controls: chunks/comments, exact config editing, reu
     await worktrees.getByRole('button', { name: 'Confirm recoverable archive' }).click();
     await expect(page.getByRole('dialog', { name: 'Settings', exact: true })).not.toBeVisible();
     await page.getByRole('button', { name: 'Settings', exact: true }).click();
+    await page.getByRole('tab', { name: 'Projects & sessions', exact: true }).click();
     const restoredTools = page
       .getByRole('dialog', { name: 'Settings', exact: true })
       .locator('.mcp-settings')

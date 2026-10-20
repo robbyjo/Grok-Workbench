@@ -54,9 +54,11 @@ test('paged history, preferences/focus, terminal tabs and interface reload recov
     await page.getByRole('button', { name: 'Latest messages', exact: true }).click();
     await page.getByRole('button', { name: 'Settings', exact: true }).click();
     const settings = page.getByRole('dialog', { name: 'Settings', exact: true });
+    await settings.getByRole('tab', { name: 'Keyboard shortcuts', exact: true }).click();
     await settings.getByLabel('Shortcut search', { exact: true }).fill('Ctrl+Shift+G');
     await settings.getByRole('button', { name: 'Save desktop preferences', exact: true }).click();
     await expect(settings.getByText('Desktop preferences saved.', { exact: true })).toBeVisible();
+    await settings.getByRole('tab', { name: 'Storage & diagnostics', exact: true }).click();
     await settings.getByRole('button', { name: 'Refresh diagnostics', exact: true }).click();
     await expect(settings.locator('pre').filter({ hasText: 'rss' })).toBeVisible();
     await page.keyboard.press('Escape');

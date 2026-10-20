@@ -23,12 +23,17 @@ function setup(scenario = 'normal') {
   store.state.projects.push({ id: 'p', name: 'Fixture', path: folder });
   const thread = store.create('p', folder);
   const events: DesktopEvent[] = [];
+  const rpcs: RpcProcess[] = [];
   const agents = new Agents(
     store,
     (event) => events.push(event),
-    (cwd) => new RpcProcess(process.execPath, [fixture, scenario], cwd),
+    (cwd) => {
+      const rpc = new RpcProcess(process.execPath, [fixture, scenario], cwd);
+      rpcs.push(rpc);
+      return rpc;
+    },
   );
-  return { folder, store, thread, agents, events };
+  return { folder, store, thread, agents, events, rpcs };
 }
 test('shutdown admission refuses direct native helper startup, including MCP inspection', async () => {
   const { agents, thread } = setup();
@@ -178,6 +183,114 @@ test('stop sends session/cancel and preserves an interrupted transcript', async 
     agents.cancel(thread.id);
     await next;
     assert.equal(thread.status, 'interrupted');
+  } finally {
+    agents.shutdown();
+    store.flush();
+  }
+});
+
+test('model and effort changes reconnect an interrupted chat and retain all advertised controls', async () => {
+  const { agents, thread, store } = setup();
+  thread.status = 'interrupted';
+  try {
+    await agents.config(thread.id, 'model', 'fixture-fast');
+    await agents.config(thread.id, 'reasoning_effort', 'low');
+    assert.equal(
+      thread.session?.configOptions.find((c: any) => c.id === 'model').currentValue,
+      'fixture-fast',
+    );
+    assert.equal(
+      thread.session?.configOptions.find((c: any) => c.id === 'reasoning_effort').currentValue,
+      'low',
+    );
+    assert.equal(thread.session?.connected, true);
+    assert.equal(thread.status, 'idle');
+  } finally {
+    agents.shutdown();
+    store.flush();
+  }
+});
+
+test('saved default permissions reach new native sessions and never change existing chat overrides', async () => {
+  const { agents, thread, store, folder } = setup('remember-approval');
+  store.state.settings.defaultPermissionMode = 'always-approve';
+  const approved = store.create('p', folder);
+  try {
+    assert.equal(thread.alwaysApprove, undefined);
+    assert.equal(approved.alwaysApprove, true);
+    await agents.prompt(approved.id, 'Use the chosen default', []);
+    assert.equal(agents.permissionsSnapshot().length, 0);
+    agents.resetApprovalMode(approved.id);
+    store.state.settings.defaultPermissionMode = 'ask';
+    const asking = store.create('p', folder);
+    assert.equal(asking.alwaysApprove, false);
+    assert.equal(approved.alwaysApprove, false);
+    store.flush();
+    const reopened = new Store(join(folder, 'state.json'));
+    assert.equal(reopened.state.settings.defaultPermissionMode, 'ask');
+    assert.equal(reopened.thread(approved.id).alwaysApprove, false);
+  } finally {
+    agents.shutdown();
+    store.flush();
+  }
+});
+
+test('chat permission selector sends mutually exclusive native modes, preserves pending approvals and persists Auto', async () => {
+  const { agents, thread, store, rpcs, folder } = setup('remember-approval');
+  try {
+    agents.setPermissionMode(thread.id, 'auto');
+    await agents.connect(thread.id);
+    const rpc = rpcs.at(-1)!;
+    let state = await rpc.request('fixture/permission-state');
+    assert.deepEqual(state.initialModeMeta, { yoloMode: false, autoMode: true });
+    assert.equal(state.autoMode, true);
+    assert.equal(state.alwaysApprove, false);
+    const prompt = agents.prompt(thread.id, 'An action the engine still asks about', []);
+    await until(() => agents.permissionsSnapshot().length === 1);
+    assert.throws(() => agents.setPermissionMode(thread.id, 'always-approve'), /idle/);
+    assert.equal(agents.permissionsSnapshot().length, 1);
+    agents.approve(agents.permissionsSnapshot()[0].id, 'allow-once');
+    await prompt;
+    agents.setPermissionMode(thread.id, 'always-approve');
+    state = await rpc.request('fixture/permission-state');
+    assert.equal(state.alwaysApprove, true);
+    assert.equal(state.autoMode, false);
+    await agents.prompt(thread.id, 'Use approve all', []);
+    assert.equal(agents.permissionsSnapshot().length, 0);
+    agents.setPermissionMode(thread.id, 'ask');
+    state = await rpc.request('fixture/permission-state');
+    assert.equal(state.alwaysApprove, false);
+    assert.equal(state.autoMode, false);
+    assert.deepEqual(
+      state.modeChanges.map((change: any) => change.permission_mode),
+      ['auto', 'always-approve', 'ask'],
+    );
+    assert.throws(() => agents.setPermissionMode(thread.id, 'invented'), /Invalid permission/);
+    assert.equal(thread.permissionMode, 'ask');
+    agents.setPermissionMode(thread.id, 'auto');
+    agents.disconnect(thread.id);
+    await agents.connect(thread.id);
+    state = await rpcs.at(-1)!.request('fixture/permission-state');
+    assert.deepEqual(state.initialModeMeta, { yoloMode: false, autoMode: true });
+    const reopened = new Store(join(folder, 'state.json'));
+    assert.equal(reopened.thread(thread.id).permissionMode, 'auto');
+    assert.equal(reopened.thread(thread.id).alwaysApprove, false);
+    assert.equal(store.create('p', folder).permissionMode, undefined);
+  } finally {
+    agents.shutdown();
+    store.flush();
+  }
+});
+
+test('an engine-disabled Auto mode is surfaced and cannot be selected', async () => {
+  const { agents, thread, store } = setup('no-auto');
+  try {
+    await agents.connect(thread.id);
+    await until(() => thread.session?.autoPermissionModeEnabled === false);
+    assert.throws(() => agents.setPermissionMode(thread.id, 'auto'), /disabled Auto/);
+    assert.equal(thread.permissionMode, undefined);
+    agents.setPermissionMode(thread.id, 'ask');
+    assert.equal(thread.permissionMode, 'ask');
   } finally {
     agents.shutdown();
     store.flush();

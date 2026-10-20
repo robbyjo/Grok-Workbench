@@ -170,6 +170,7 @@ async function dispatch(method: string, args: Wire) {
       'thread:edit',
       'worktrees:handoff',
       'sessions:rewind',
+      'permission:set-mode',
     ].includes(method) &&
     taskWorkflows?.owns(args.id)
   )
@@ -179,7 +180,9 @@ async function dispatch(method: string, args: Wire) {
     (/^(agent:|mcp:|integration:|sessions:|configuration:|privacy:|tasks:|auth:|storage:|updates:|organization:)/.test(
       method,
     ) ||
-      ['thread:edit', 'project:edit', 'preferences:save'].includes(method)) &&
+      ['thread:edit', 'project:edit', 'preferences:save', 'permission:set-mode'].includes(
+        method,
+      )) &&
     !['agent:cancel', 'agent:disconnect', 'auth:cancel-sign-in'].includes(method)
   )
     throw new Error('Wait for the current workspace/profile operation.');
@@ -491,6 +494,11 @@ async function dispatch(method: string, args: Wire) {
     case 'drafts:save':
       return store.drafts(args.value);
     case 'preferences:save': {
+      if (
+        args.defaultPermissionMode !== undefined &&
+        !['ask', 'auto', 'always-approve'].includes(args.defaultPermissionMode)
+      )
+        throw new Error('Invalid default permission mode.');
       const appearance =
         args.appearance === undefined
           ? store.state.settings.appearance
@@ -512,6 +520,8 @@ async function dispatch(method: string, args: Wire) {
       store.history.budget(budget);
       store.state.settings = {
         ...store.state.settings,
+        defaultPermissionMode:
+          args.defaultPermissionMode ?? store.state.settings.defaultPermissionMode,
         appearance,
         shortcuts,
         storageMiB: budget,
@@ -1064,6 +1074,8 @@ async function dispatch(method: string, args: Wire) {
       return agents.permissionsSnapshot();
     case 'permission:reset-mode':
       return agents.resetApprovalMode(thread().id);
+    case 'permission:set-mode':
+      return agents.setPermissionMode(thread().id, args.mode);
     case 'permission:answer':
       return agents.approve(
         string(args.permissionId, 'approval ID', 100),

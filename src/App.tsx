@@ -1,3 +1,8 @@
+import ConfigControls from './ConfigControls';
+import SettingsTabs from './SettingsTabs';
+import PermissionSettings from './PermissionSettings';
+import UpdateSettings from './UpdateSettings';
+import { version } from '../package.json';
 import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { readAppearance } from '../shared/appearance';
 import { AppearanceContext } from './appearance';
@@ -161,87 +166,6 @@ function Activity({ entry }: { entry: Thread['entries'][number] }) {
       <div className="markdown">
         <Markdown text={entry.text} />
       </div>
-    </div>
-  );
-}
-function ConfigControls({
-  thread,
-  action,
-}: {
-  thread: Thread;
-  action: (method: string, args?: Wire) => Promise<any>;
-}) {
-  const configs = thread.session?.configOptions ?? [];
-  return (
-    <div className="config-controls">
-      {configs.length ? (
-        configs
-          .filter((item: Wire) => item.type === 'select')
-          .map((config: Wire) => {
-            const values = (config.options ?? []).flatMap((item: Wire) => item.options ?? [item]);
-            return (
-              <label key={config.id} title={config.name ?? config.id}>
-                <select
-                  aria-label={config.name ?? config.id}
-                  disabled={thread.status !== 'idle'}
-                  value={config.currentValue}
-                  onChange={(event) =>
-                    void action('agent:config', {
-                      id: thread.id,
-                      configId: config.id,
-                      value: event.target.value,
-                    })
-                  }
-                >
-                  {!values.some((item: Wire) => item.value === config.currentValue) && (
-                    <option value={config.currentValue}>{config.currentValue}</option>
-                  )}
-                  {values.map((item: Wire) => (
-                    <option value={item.value} key={item.value}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            );
-          })
-      ) : (
-        <span className="muted">
-          <Circle size={10} /> Grok defaults
-        </span>
-      )}
-      {thread.session?.modes?.availableModes && (
-        <select
-          aria-label="Agent mode"
-          disabled={thread.status !== 'idle'}
-          value={thread.session.modes.currentModeId}
-          onChange={(event) =>
-            void action('agent:config', {
-              id: thread.id,
-              configId: '__mode',
-              value: event.target.value,
-            })
-          }
-        >
-          {thread.session.modes.availableModes.map((mode: Wire) => (
-            <option value={mode.id} key={mode.id}>
-              {mode.name}
-            </option>
-          ))}
-        </select>
-      )}
-      <span
-        className="permission-label"
-        title="Grok's configured permission rules apply. Approval prompts are surfaced here."
-      >
-        <ShieldCheck size={13} />{' '}
-        {thread.alwaysApprove ? 'Always approve · this chat' : 'Grok permissions'}
-      </span>
-      {thread.alwaysApprove && (
-        <button onClick={() => void action('permission:reset-mode', { id: thread.id })}>
-          Ask for approvals again
-        </button>
-      )}
     </div>
   );
 }
@@ -1079,7 +1003,8 @@ export default function App() {
                   ) && (
                     <p className="muted">
                       “Don't ask again for anything” is remembered for this chat, including after
-                      restart. You can turn approval prompts back on with “Ask for approvals again”.
+                      restart. Choose “Always ask” in the chat's permission selector to turn prompts
+                      back on.
                     </p>
                   )}
                   <details>
@@ -1447,121 +1372,205 @@ export default function App() {
                 <X size={18} />
               </button>
             </div>
-            <AppearanceSettings state={state} />
-            <h3>Grok engine</h3>
-            <p>
-              The built-in engine includes Grok Build’s agent, OAuth/API authentication, project
-              rules, skills, plugins, and MCP support. A separate Grok executable is optional.
-            </p>
-            <label className="field-label" htmlFor="executable">
-              Engine (embedded is recommended)
-            </label>
-            <div className="input-row">
-              <input
-                id="executable"
-                value={executable}
-                onChange={(event) => setExecutable(event.target.value)}
-                placeholder="embedded, grok or C:\path\to\grok.exe"
-              />
-              <button
-                onClick={async () => {
-                  const path = await action('settings:executable');
-                  if (path) setExecutable(path);
-                }}
-              >
-                Browse
-              </button>
-            </div>
-            <small>
-              Use “embedded” for the built-in engine, “grok” on PATH, or select a Windows
-              executable.
-            </small>
-            <div className="runtime-help">
-              <h4>First-time setup</h4>
-              <p>
-                Select embedded and save settings, then connect a project chat to sign in. Your
-                project still needs its own development tools.
-              </p>
-              <button
-                onClick={() =>
-                  void action('external:open', { url: 'https://docs.x.ai/build/overview' })
-                }
-              >
-                Installation & documentation
-                <ArrowUpRight size={13} />
-              </button>
-              {thread && (
-                <button
-                  onClick={() => {
-                    closeSettings();
-                    setTerminal(true);
-                  }}
-                >
-                  Open project terminal
-                  <TerminalSquare size={13} />
-                </button>
-              )}
-            </div>
-            <div className="runtime-help">
-              <h4>Execution boundaries</h4>
-              <p>
-                Grok controls tool permissions and project trust. Choosing “don't ask again for
-                anything” enables always-approve for that chat until you turn approval prompts back
-                on. Grok currently has no OS sandbox on Windows. The interactive terminal runs as
-                your Windows user.
-              </p>
-            </div>
-            <McpSettings thread={thread} />
-            <AuthenticationSettings
-              state={state}
-              thread={thread}
-              signedIn={() => closeSettings(true)}
+            <SettingsTabs
+              tabs={[
+                {
+                  id: 'general',
+                  name: 'General',
+                  content: (
+                    <>
+                      <h3>Grok engine</h3>
+                      <p>
+                        The built-in engine includes Grok Build’s agent, OAuth/API authentication,
+                        project rules, skills, plugins, and MCP support. A separate Grok executable
+                        is optional.
+                      </p>
+                      <label className="field-label" htmlFor="executable">
+                        Engine (embedded is recommended)
+                      </label>
+                      <div className="input-row">
+                        <input
+                          id="executable"
+                          value={executable}
+                          onChange={(event) => setExecutable(event.target.value)}
+                          placeholder="embedded, grok or C:\path\to\grok.exe"
+                        />
+                        <button
+                          onClick={async () => {
+                            const path = await action('settings:executable');
+                            if (path) setExecutable(path);
+                          }}
+                        >
+                          Browse
+                        </button>
+                      </div>
+                      <small>
+                        Use “embedded” for the built-in engine, “grok” on PATH, or select a Windows
+                        executable.
+                      </small>
+                      <div className="runtime-help">
+                        <h4>First-time setup</h4>
+                        <p>
+                          Select embedded and save settings, then connect a project chat to sign in.
+                          Your project still needs its own development tools.
+                        </p>
+                        <button
+                          onClick={() =>
+                            void action('external:open', {
+                              url: 'https://docs.x.ai/build/overview',
+                            })
+                          }
+                        >
+                          Installation & documentation
+                          <ArrowUpRight size={13} />
+                        </button>
+                        {thread && (
+                          <button
+                            onClick={() => {
+                              closeSettings();
+                              setTerminal(true);
+                            }}
+                          >
+                            Open project terminal
+                            <TerminalSquare size={13} />
+                          </button>
+                        )}
+                      </div>
+
+                      <button
+                        className="primary"
+                        onClick={async () => {
+                          const result = await action('settings:save', { executable });
+                          if (result) closeSettings();
+                        }}
+                      >
+                        Save settings
+                      </button>
+                      <DesktopPreferences state={state} section="general" />
+                    </>
+                  ),
+                },
+                {
+                  id: 'appearance',
+                  name: 'Appearance',
+                  content: <AppearanceSettings state={state} />,
+                },
+                {
+                  id: 'models',
+                  name: 'Models & permissions',
+                  content: (
+                    <>
+                      <h3>Model and reasoning</h3>
+                      <p>
+                        Choices come from the connected Grok engine and depend on your account and
+                        configured models. Change them while the chat is idle. Connect to refresh
+                        saved choices.
+                      </p>
+                      {thread ? (
+                        <ConfigControls thread={thread} action={action} />
+                      ) : (
+                        <p>Open a project chat to connect and choose a model.</p>
+                      )}
+                      <p className="muted">
+                        If the engine offers only one choice, check your sign-in method in Account
+                        or model definitions in Configuration. Models without configurable reasoning
+                        do not show an effort selector.
+                      </p>
+                      <PermissionSettings state={state} />
+                      <div className="runtime-help">
+                        <h4>Execution boundaries</h4>
+                        <p>
+                          Grok controls tool permissions and project trust. Choosing “don't ask
+                          again for anything” enables always-approve for that chat until you turn
+                          approval prompts back on. Grok currently has no OS sandbox on Windows. The
+                          interactive terminal runs as your Windows user.
+                        </p>
+                      </div>
+                    </>
+                  ),
+                },
+                {
+                  id: 'account',
+                  name: 'Account',
+                  content: (
+                    <AuthenticationSettings
+                      state={state}
+                      thread={thread}
+                      signedIn={() => closeSettings(true)}
+                    />
+                  ),
+                },
+                {
+                  id: 'integrations',
+                  name: 'Integrations',
+                  content: (
+                    <>
+                      <McpSettings thread={thread} />
+                      <IntegrationSettings thread={thread} />
+                    </>
+                  ),
+                },
+                {
+                  id: 'configuration',
+                  name: 'Configuration',
+                  content: (
+                    <ConfigurationEditor thread={thread} dirtyChanged={setConfigurationDirty} />
+                  ),
+                },
+                {
+                  id: 'projects',
+                  name: 'Projects & sessions',
+                  content: (
+                    <>
+                      {!thread && (
+                        <p>
+                          Open a project chat to manage actions, Git, worktrees and native sessions.
+                        </p>
+                      )}
+                      <ProjectActions thread={thread} />
+                      {thread && <GitRepositoryTools key={`git-${thread.id}`} thread={thread} />}
+                      {thread && (
+                        <WorktreeTools
+                          key={`worktrees-${thread.id}`}
+                          thread={thread}
+                          select={(id) => {
+                            setActiveId(id);
+                            closeSettings();
+                          }}
+                        />
+                      )}
+                      {thread && (
+                        <SessionTools
+                          key={`sessions-${thread.id}`}
+                          thread={thread}
+                          select={(id) => {
+                            setActiveId(id);
+                            closeSettings();
+                          }}
+                        />
+                      )}
+                    </>
+                  ),
+                },
+                {
+                  id: 'shortcuts',
+                  name: 'Keyboard shortcuts',
+                  content: <DesktopPreferences state={state} section="shortcuts" />,
+                },
+                {
+                  id: 'storage',
+                  name: 'Storage & diagnostics',
+                  content: <DesktopPreferences state={state} section="storage" />,
+                },
+                { id: 'updates', name: 'Updates', content: <UpdateSettings /> },
+              ]}
             />
-            <IntegrationSettings thread={thread} />
-            <ConfigurationEditor thread={thread} dirtyChanged={setConfigurationDirty} />
-            <ProjectActions thread={thread} />
-            <DesktopPreferences state={state} />
-            {thread && <GitRepositoryTools key={thread.id} thread={thread} />}
-            {thread && (
-              <WorktreeTools
-                key={thread.id}
-                thread={thread}
-                select={(id) => {
-                  setActiveId(id);
-                  closeSettings();
-                }}
-              />
-            )}
-            {thread && (
-              <SessionTools
-                key={thread.id}
-                thread={thread}
-                select={(id) => {
-                  setActiveId(id);
-                  closeSettings();
-                }}
-              />
-            )}
-            <div className="modal-actions">
-              <button onClick={() => closeSettings()}>Cancel</button>
-              <button
-                className="primary"
-                onClick={async () => {
-                  const result = await action('settings:save', { executable });
-                  if (result) closeSettings();
-                }}
-              >
-                Save settings
-              </button>
-              {thread && (
-                <button onClick={() => void action('agent:connect', { id: thread.id })}>
-                  Connect Grok
-                </button>
-              )}
+            <div className="settings-footer">
+              <small className="muted">
+                Grok Workbench {version} · Independent client · Windows first
+              </small>
+              <button onClick={() => closeSettings()}>Done</button>
             </div>
-            <small className="muted">
-              Grok Workbench 0.6.3 · Independent client · Windows first
-            </small>
           </section>
         </div>
       )}

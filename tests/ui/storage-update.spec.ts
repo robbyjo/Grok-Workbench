@@ -80,6 +80,7 @@ test('aggregate quota blocks native work; reviewed retention cancels, exports/pr
   try {
     const page = await app.firstWindow();
     await page.getByRole('button', { name: 'Settings', exact: true }).click();
+    await page.getByRole('tab', { name: 'Storage & diagnostics', exact: true }).click();
     const modal = page.getByRole('dialog', { name: 'Settings', exact: true });
     await modal.getByLabel('Aggregate desktop and Grok profile budget (MiB)').fill('256');
     await modal.getByRole('button', { name: 'Save desktop preferences', exact: true }).click();
@@ -159,6 +160,7 @@ test('aggregate quota blocks native work; reviewed retention cancels, exports/pr
       .getByRole('button', { name: 'Restore verified native session export', exact: true })
       .click();
     await expect(modal.getByRole('alert').filter({ hasText: 'already exists' })).toBeVisible();
+    await modal.getByRole('tab', { name: 'Updates', exact: true }).click();
     await modal
       .getByRole('button', { name: 'Inspect installed version and rollback', exact: true })
       .click();

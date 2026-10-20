@@ -6,6 +6,11 @@ import { Store } from './store';
 import { runtimeExecutable, embeddedEngine } from './runtime';
 import type { Attachment, DesktopEvent, Permission, Wire } from '../shared/types';
 import { version } from '../package.json';
+import {
+  savedPermissionMode,
+  validatePermissionMode,
+  type PermissionMode,
+} from '../shared/permissions';
 import { nativeMethods, extensionResult, publicAgent } from './native-extensions';
 
 interface Connection {
@@ -15,6 +20,7 @@ interface Connection {
   suppressReplay?: boolean;
   turn?: string;
   cancelTimer?: NodeJS.Timeout;
+  autoPermissionModeEnabled?: boolean;
 }
 export class Agents {
   canStart = () => true;
@@ -81,6 +87,15 @@ export class Agents {
     const connection: Connection = { rpc: this.launch(thread.cwd), loading: false };
     this.connections.set(id, connection);
     connection.rpc.on('notification', (message: Wire) => {
+      if (['_x.ai/settings/update', 'x.ai/settings/update'].includes(message.method)) {
+        const enabled = message.params?.auto_permission_mode_enabled;
+        if (typeof enabled === 'boolean') {
+          connection.autoPermissionModeEnabled = enabled;
+          thread.session = { ...thread.session, autoPermissionModeEnabled: enabled };
+          this.store.touch();
+        }
+        return;
+      }
       if (
         ['_x.ai/session_notification', 'x.ai/session_notification'].includes(message.method) &&
         message.params?.sessionId === thread.sessionId
@@ -208,8 +223,13 @@ export class Agents {
           ...(thread.sessionId ? { sessionId: thread.sessionId } : {}),
           cwd: thread.cwd,
           mcpServers: [],
-          ...(thread.alwaysApprove !== undefined
-            ? { _meta: { yoloMode: thread.alwaysApprove } }
+          ...(savedPermissionMode(thread) !== undefined
+            ? {
+                _meta: {
+                  yoloMode: savedPermissionMode(thread) === 'always-approve',
+                  autoMode: savedPermissionMode(thread) === 'auto',
+                },
+              }
             : {}),
         },
         60_000,
@@ -219,8 +239,14 @@ export class Agents {
           throw new Error('Grok did not return a session ID.');
         thread.sessionId = result.sessionId;
       }
-      thread.session = { ...result, agent: publicAgent(connection.initialized), connected: true };
-      if (thread.alwaysApprove !== undefined) this.notifyApprovalMode(id, thread.alwaysApprove);
+      thread.session = {
+        ...result,
+        agent: publicAgent(connection.initialized),
+        connected: true,
+        autoPermissionModeEnabled: connection.autoPermissionModeEnabled,
+      };
+      const permissionMode = savedPermissionMode(thread);
+      if (permissionMode !== undefined) this.notifyPermissionMode(id, permissionMode);
       thread.status = this.permissionsSnapshot().some((item) => item.threadId === id)
         ? 'approval'
         : 'idle';
@@ -570,19 +596,30 @@ export class Agents {
   permissionsSnapshot() {
     return [...this.permissions.values()].map((item) => item.permission);
   }
-  private notifyApprovalMode(id: string, enabled: boolean) {
-    this.connections.get(id)?.rpc.notify('x.ai/yolo_mode_changed', {
+  private notifyPermissionMode(id: string, mode: PermissionMode) {
+    // ACP extension methods carry an underscore on the wire; the native decoder strips it.
+    this.connections.get(id)?.rpc.notify('_x.ai/yolo_mode_changed', {
       sessionId: this.store.thread(id).sessionId,
-      yolo_mode: enabled,
-      auto_mode: false,
-      permission_mode: enabled ? 'always-approve' : 'ask',
+      yolo_mode: mode === 'always-approve',
+      auto_mode: mode === 'auto',
+      permission_mode: mode,
     });
   }
   resetApprovalMode(id: string) {
+    return this.setPermissionMode(id, 'ask');
+  }
+  setPermissionMode(id: string, value: unknown) {
+    const mode = validatePermissionMode(value);
     const thread = this.store.thread(id);
-    this.notifyApprovalMode(id, false);
-    thread.alwaysApprove = false;
+    if (['running', 'approval', 'connecting'].includes(thread.status))
+      throw new Error('Change permission mode while the chat is idle.');
+    if (mode === 'auto' && thread.session?.autoPermissionModeEnabled === false)
+      throw new Error('Grok has disabled Auto permission mode for this connection.');
+    this.notifyPermissionMode(id, mode);
+    thread.permissionMode = mode;
+    thread.alwaysApprove = mode === 'always-approve';
     this.store.flush();
+    return mode;
   }
   approve(permissionId: string, optionId?: string) {
     const pending = this.permissions.get(permissionId);
@@ -593,7 +630,8 @@ export class Agents {
       pending.permission.kind !== 'trust' && optionId === 'enable-always-approve';
     // Grok maps this special option to AllowOnce. The client must also switch
     // the engine mode; sending the selected response alone asks again next time.
-    if (enableAlwaysApprove) this.notifyApprovalMode(pending.permission.threadId, true);
+    if (enableAlwaysApprove)
+      this.notifyPermissionMode(pending.permission.threadId, 'always-approve');
     pending.rpc.respond(
       pending.rpcId,
       pending.permission.kind === 'trust'
@@ -603,7 +641,10 @@ export class Agents {
     this.permissions.delete(permissionId);
     this.emit({ type: 'permission-closed', id: permissionId });
     const thread = this.store.thread(pending.permission.threadId);
-    if (enableAlwaysApprove) thread.alwaysApprove = true;
+    if (enableAlwaysApprove) {
+      thread.alwaysApprove = true;
+      thread.permissionMode = 'always-approve';
+    }
     if (!this.permissionsSnapshot().some((item) => item.threadId === thread.id))
       thread.status = this.connections.get(thread.id)?.turn ? 'running' : 'idle';
     this.store.touch();

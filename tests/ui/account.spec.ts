@@ -70,6 +70,7 @@ test('account sign-in is above Settings without a project; remembered API key su
     await page.screenshot({ path: join(root, 'account.png') });
     await modal.getByRole('button', { name: 'Close account' }).click();
     await page.getByRole('button', { name: 'Settings', exact: true }).click();
+    await page.getByRole('tab', { name: 'Account', exact: true }).click();
     await expect(
       page
         .getByRole('dialog', { name: 'Settings', exact: true })

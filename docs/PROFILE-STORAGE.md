@@ -1,6 +1,6 @@
 # Profile storage and native retention
 
-Settings → Desktop preferences exposes an aggregate desktop/Grok profile budget (default 4,096 MiB). Inspect aggregate profile storage reports file bytes by category, including native sessions, search cache, logs, media, desktop history and update binaries. Nested profile roots are counted once. Enumeration is bounded and refuses links; it does not read credential contents.
+Settings → Storage & diagnostics exposes an aggregate desktop/Grok profile budget (default 4,096 MiB). Inspect aggregate profile storage reports file bytes by category, including native sessions, search cache, logs, media, desktop history and update binaries. Nested profile roots are counted once. Enumeration is bounded and refuses links; it does not read credential contents.
 
 At 90% of the aggregate budget, new connections, prompts, queued work, media generation and attachment imports are refused with cleanup guidance. This is admission control, not an operating-system disk quota: a turn already running or a separate Grok process can continue writing. Desktop history, media, terminal buffers and logs retain their separate limits. Export destinations outside both profiles are excluded from the budget.
 

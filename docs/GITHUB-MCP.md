@@ -8,7 +8,7 @@ The current definition intentionally requests only `read:user`, uses `--read-onl
 
 Run `scripts/install-github-mcp.ps1 -GrokHome '<selected Grok profile>'`. The script downloads a pinned release, verifies archive and executable SHA256, installs the executable and available license notices under `tools/github`, and touches no credentials. Restart Grok Workbench. The optional provider is separate from the portable application artifact.
 
-In Settings → MCP servers, add a user STDIO definition:
+In Settings → Integrations → MCP servers, add a user STDIO definition:
 
 ```text
 Name: github-oauth

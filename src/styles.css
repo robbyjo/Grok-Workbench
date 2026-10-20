@@ -1513,6 +1513,81 @@ mark {
 .modal.small {
   width: 390px;
 }
+.modal.settings-modal {
+  width: 960px;
+  height: min(800px, 90vh);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.settings-modal > .modal-header,
+.settings-footer {
+  flex-shrink: 0;
+  padding: 18px 24px;
+  margin: 0;
+}
+.settings-layout {
+  display: grid;
+  grid-template-columns: calc(190px * var(--ui-font-scale)) minmax(0, 1fr);
+  flex: 1;
+  min-height: 0;
+  border-block: 1px solid var(--border-strong);
+}
+.settings-tabs {
+  overflow-y: auto;
+  border-right: 1px solid var(--border-strong);
+  padding: 12px;
+}
+.settings-tabs > button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  margin-bottom: 4px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.settings-tabs > button[aria-selected='true'] {
+  background: var(--surface-3);
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+.settings-panels {
+  overflow: hidden;
+  min-width: 0;
+}
+.settings-panel {
+  padding: 8px 24px 28px;
+  height: 100%;
+  overflow-y: auto;
+}
+.settings-panel[hidden] {
+  display: none;
+}
+.settings-panel > .mcp-settings:first-child {
+  margin-top: 8px;
+  border-top: 0;
+}
+.settings-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+@media (max-width: 650px) {
+  .settings-layout {
+    grid-template-columns: 140px minmax(0, 1fr);
+  }
+  .settings-panel {
+    padding-inline: 12px;
+  }
+  .settings-tabs {
+    padding: 6px;
+  }
+  .settings-tabs > button {
+    overflow-wrap: anywhere;
+  }
+}
 .mcp-settings {
   margin-top: 24px;
   border-top: 1px solid var(--border-strong);

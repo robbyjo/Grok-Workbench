@@ -91,6 +91,7 @@ test('native media previews play local audio, attach binary files and retain dra
     await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].reload());
     await expect(page.locator('.attachments')).toContainText('preview.png');
     await page.getByRole('button', { name: 'Settings', exact: true }).click();
+    await page.getByRole('tab', { name: 'Account', exact: true }).click();
     const settings = page.getByRole('dialog', { name: 'Settings', exact: true });
     await settings.getByLabel('Authentication method', { exact: true }).selectOption('oauth');
     await expect(settings.getByLabel('Authentication method', { exact: true })).toHaveValue(

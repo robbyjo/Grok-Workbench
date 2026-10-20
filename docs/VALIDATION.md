@@ -1,6 +1,20 @@
 # Validation record
 
-Current version: **Grok Workbench 0.8.1**, with the Grok Rust library embedded instead of a packaged CLI. Validation was performed on Windows x64; dates below use America/New_York. Earlier sections retain historical version-specific names and results.
+Current source version: **Grok Workbench 0.8.2**, with the Grok Rust library embedded instead of a packaged CLI. Validation was performed on Windows x64; dates below use America/New_York. Earlier sections retain historical version-specific names and results.
+
+## Version 0.8.2 release preparation (October 20)
+
+The requested follow-up changes are included in 0.8.2. Publication must use the exact successful Windows CI artifact; the hosted/package/portable result will be recorded after verification. The previous v0.8.1 tag and assets remain unchanged. The local implementation evidence below predates this version bump and does not substitute for release acceptance.
+
+## October 20 categorized Settings (unreleased source)
+
+The subsequent composer permission selector uses **Always ask**, **Approve for me** (native Auto) and **Approve all**, with the same choices available for new-chat defaults. Build/types, formatting, the **90-test backend suite** and the focused **appearance, desktop and Settings GUI scenarios** pass. The GUI changes all three chat modes without starting a native connection, verifies agreement between composer and Settings, preserves the separate new-chat default, tests all three defaults and checks persistence after restart. Default-permission saving disables the fields and clears stale success feedback until the write finishes. Native mode notifications use the required ACP wire method `_x.ai/yolo_mode_changed`; the native decoder strips the underscore before dispatch. The earlier permissive fixture accepted the malformed unprefixed name; it now accepts only the actual wire method. Regressions cover mutually exclusive Auto/always-approve flags at new/load and live transitions, legacy per-chat choices, restart persistence, pending approval preservation, invalid values and an engine-reported disabled Auto feature. Live native classifier judgments and mode-toggle execution have not been exercised with real model/tool requests for this follow-up.
+
+Build/typechecks, formatting, all **88 backend tests** and all **10 source Electron GUI scenarios** pass locally. Settings uses keyboard-accessible category tabs and independently scrollable panels. Drafts remain mounted after visiting a category; native configuration drafts survive tab changes and retain the existing close/discard guard. Appearance captures were inspected in light mode and at the largest supported UI text size.
+
+Saved model/effort selectors are usable after an interrupted turn and reconnect through the existing ACP settings path. Backend fixtures verify model and effort changes while retaining the full advertised control list. The GUI regression verifies enabled selectors and flat/grouped engine options after restart recovery. A read-only native catalog check returned multiple models and four effort levels; this does not establish the catalog offered to another account/profile or a live model request.
+
+The new default permission preference is validated at IPC, survives restart and is copied into newly created chats. Fixtures verify that always-approve reaches native session creation/mode notifications and avoids a repeated tool prompt; existing chat overrides remain unchanged. GUI coverage checks both defaults, unrelated preference saves, invalid-value rejection and a full restart. The published v0.8.1 tag and assets are unchanged; this follow-up has no packaged or hosted-release acceptance yet.
 
 ## Version 0.8.1 publication (October 20)
 

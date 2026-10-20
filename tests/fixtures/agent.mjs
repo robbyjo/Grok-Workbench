@@ -4,6 +4,9 @@ let promptId;
 let sessionId = 'fixture-session';
 let permission = false;
 let alwaysApprove = false;
+let autoMode = false;
+let initialModeMeta;
+const modeChanges = [];
 const send = (value) => process.stdout.write(JSON.stringify({ jsonrpc: '2.0', ...value }) + '\n');
 const result = (id, result) => send({ id, result });
 const update = (update, id = sessionId) =>
@@ -23,7 +26,25 @@ const session = {
       name: 'Model',
       type: 'select',
       currentValue: 'fixture-model',
-      options: [{ value: 'fixture-model', name: 'Fixture Model' }],
+      options: [
+        { value: 'fixture-model', name: 'Fixture Model' },
+        { value: 'fixture-fast', name: 'Fixture Fast' },
+      ],
+    },
+    {
+      id: 'reasoning_effort',
+      name: 'Reasoning Effort',
+      type: 'select',
+      currentValue: 'high',
+      options: [
+        {
+          name: 'Effort',
+          options: [
+            { value: 'low', name: 'Low' },
+            { value: 'high', name: 'High' },
+          ],
+        },
+      ],
     },
   ],
 };
@@ -43,8 +64,11 @@ createInterface({ input: process.stdin }).on('line', (line) => {
       authMethods: [{ id: 'fixture-auth', name: 'Fixture login' }],
     });
   } else if (message.method === 'session/new' || message.method === 'session/load') {
+    initialModeMeta = message.params._meta;
     if (typeof message.params._meta?.yoloMode === 'boolean')
       alwaysApprove = message.params._meta.yoloMode;
+    if (typeof message.params._meta?.autoMode === 'boolean')
+      autoMode = message.params._meta.autoMode;
     if (message.method === 'session/load') {
       sessionId = message.params.sessionId;
       update({
@@ -57,6 +81,8 @@ createInterface({ input: process.stdin }).on('line', (line) => {
       });
     }
     result(message.id, { ...session, sessionId });
+    if (scenario === 'no-auto')
+      send({ method: '_x.ai/settings/update', params: { auto_permission_mode_enabled: false } });
     if (scenario === 'trust' || scenario === 'trust-prefixed')
       send({
         id: 903,
@@ -71,15 +97,21 @@ createInterface({ input: process.stdin }).on('line', (line) => {
           configKinds: ['hooks', 'mcp'],
         },
       });
-  } else if (message.method === 'x.ai/yolo_mode_changed') {
+  } else if (message.method === '_x.ai/yolo_mode_changed') {
     alwaysApprove = message.params.yolo_mode === true;
+    autoMode = message.params.auto_mode === true;
+    modeChanges.push(message.params);
+  } else if (message.method === 'fixture/permission-state') {
+    result(message.id, { alwaysApprove, autoMode, initialModeMeta, modeChanges });
   } else if (message.method === 'authenticate') result(message.id, {});
   else if (message.method === 'session/set_mode') result(message.id, {});
-  else if (message.method === 'session/set_config_option')
+  else if (message.method === 'session/set_config_option') {
+    const config = session.configOptions.find((item) => item.id === message.params.configId);
+    config.currentValue = message.params.value;
     result(message.id, {
-      configOptions: [{ ...session.configOptions[0], currentValue: message.params.value }],
+      configOptions: session.configOptions,
     });
-  else if (message.method === 'session/prompt') {
+  } else if (message.method === 'session/prompt') {
     promptId = message.id;
     if (scenario === 'remember-approval' && alwaysApprove) {
       update({

@@ -1,6 +1,6 @@
 # Task, test and review
 
-The composer’s **Task → test → review** control creates a sibling Git worktree from the source chat’s reviewed HEAD. The source must be clean and committed; queued prompts and unsaved editor drafts must be resolved first. Configure test executables under **Settings → Project actions**. Select one to ten actions, enter the task, review the exact executable, arguments, directory and source commit, then start.
+The composer’s **Task → test → review** control creates a sibling Git worktree from the source chat’s reviewed HEAD. The source must be clean and committed; queued prompts and unsaved editor drafts must be resolved first. Configure test executables under **Settings → Projects & sessions → Project setup and reusable actions**. Select one to ten actions, enter the task, review the exact executable, arguments, directory and source commit, then start.
 
 The new chat runs in `.grok-workbench-tasks/<UUID>` beside the source checkout. Workbench preserves the source chat’s selected model category and mode when available; otherwise it uses Grok defaults. Ordinary project trust and one-time tool approvals still apply. Workbench executes the selected tests after a successful agent turn, with captured exit codes and bounded output. Changes to the approved test action stop the workflow for review. There is one managed workflow at a time; unrelated running agents/actions prevent workspace mutation and test startup.
 

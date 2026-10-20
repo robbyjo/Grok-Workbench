@@ -110,6 +110,7 @@ const methods = new Set([
   'permissions',
   'permission:answer',
   'permission:reset-mode',
+  'permission:set-mode',
   'settings:save',
   'settings:executable',
   'files:list',

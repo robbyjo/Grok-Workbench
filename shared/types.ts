@@ -49,6 +49,7 @@ export interface Thread {
   cwd: string;
   sessionId?: string;
   alwaysApprove?: boolean;
+  permissionMode?: import('./permissions').PermissionMode;
   status: Status;
   archived: boolean;
   pinned: boolean;
@@ -76,6 +77,7 @@ export interface Thread {
 }
 export interface Settings {
   executable: string;
+  defaultPermissionMode?: import('./permissions').PermissionMode;
   appearance?: import('./appearance').Appearance;
   authMode?: 'auto' | 'oauth' | 'api';
   storageMiB?: number;

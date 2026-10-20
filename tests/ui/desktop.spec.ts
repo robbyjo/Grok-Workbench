@@ -257,10 +257,12 @@ test('native desktop: persisted chat, file/diff panels, terminal, and IPC bounda
     expect(rejected).toBe(true);
     await page.getByRole('button', { name: 'Settings', exact: true }).click();
     await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible();
+    await page.getByRole('tab', { name: 'Models & permissions', exact: true }).click();
     await expect(
       page.getByText('Grok currently has no OS sandbox on Windows.', { exact: false }),
     ).toBeVisible();
     await page.screenshot({ path: '.test-data/desktop-settings.png' });
+    await page.getByRole('tab', { name: 'Integrations', exact: true }).click();
     await page.getByText('Add MCP server', { exact: true }).click();
     await page.getByLabel('Server name', { exact: true }).fill('ui-fixture');
     await page.getByLabel('Server command', { exact: true }).fill(process.execPath);

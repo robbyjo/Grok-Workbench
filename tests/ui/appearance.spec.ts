@@ -76,6 +76,7 @@ test('appearance updates open surfaces independently, validates settings, and su
     await page.getByRole('button', { name: 'example.ts', exact: true }).click();
     await expect(page.locator('.monaco-editor textarea').first()).toBeVisible();
     await page.getByRole('button', { name: 'Settings', exact: true }).click();
+    await page.getByRole('tab', { name: 'Appearance', exact: true }).click();
     await page.getByLabel('Background theme').selectOption('light');
     await page.getByLabel('UI text size (%)', { exact: true }).fill('125');
     await page.getByLabel('Log and terminal font size (px)', { exact: true }).fill('18');
@@ -131,6 +132,7 @@ test('appearance updates open surfaces independently, validates settings, and su
     await expect(page.locator('.settings-button')).toHaveCSS('font-size', '15px');
     await expect(page.locator('.markdown').first()).toHaveCSS('font-size', '18px');
     await page.getByRole('button', { name: 'Settings', exact: true }).click();
+    await page.getByRole('tab', { name: 'Appearance', exact: true }).click();
     await expect(page.getByLabel('Background theme')).toHaveValue('light');
     await page.getByLabel('Background theme').selectOption('dark');
     await page.getByLabel('UI text size (%)', { exact: true }).fill('175');
@@ -141,6 +143,16 @@ test('appearance updates open surfaces independently, validates settings, and su
     await page.locator('.settings-modal').evaluate((element) => {
       element.scrollTop = 0;
     });
+    expect(
+      await page
+        .locator('.settings-tabs')
+        .evaluate((element) => element.scrollWidth <= element.clientWidth),
+    ).toBe(true);
+    expect(
+      await page
+        .getByRole('tabpanel', { name: 'Appearance', exact: true })
+        .evaluate((element) => element.scrollWidth <= element.clientWidth),
+    ).toBe(true);
     await page.screenshot({ path: '.test-data/appearance-dark-large.png' });
     await page.getByRole('button', { name: 'Reset appearance fields', exact: true }).click();
     await page.getByRole('button', { name: 'Save appearance', exact: true }).click();

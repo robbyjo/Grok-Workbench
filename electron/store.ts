@@ -510,6 +510,12 @@ export class Store {
       projectId,
       cwd,
       title: 'New chat',
+      ...(this.state.settings.defaultPermissionMode
+        ? {
+            permissionMode: this.state.settings.defaultPermissionMode,
+            alwaysApprove: this.state.settings.defaultPermissionMode === 'always-approve',
+          }
+        : {}),
       status: 'idle',
       archived: false,
       pinned: false,
