@@ -1,6 +1,8 @@
 # Local workflow parity audit
 
-Release scope snapshot: October 18, 2026 (America/New_York); **Grok Workbench 0.8.0** with embedded Grok Build source `2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8` (library 1.0.45). Full local workflow parity is not achieved. Local workflows come first; remote hosts and automations remain deferred by user choice.
+Release scope snapshot: October 20, 2026 (America/New_York); **Grok Workbench 0.8.1** with embedded Grok Build source `2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8` (library 1.0.45). Full local workflow parity is not achieved. Local workflows come first; remote hosts and automations remain deferred by user choice.
+
+Version **0.8.1** adds saved UI/log font sizing and light/dark themes, including live terminal/editor updates, and fixes the client side of the engine's “don't ask again” option with per-chat persistence and explicit revocation. Nine source and nine packaged GUI scenarios, backend acceptance and the real portable lifecycle gates pass in [Windows CI](https://github.com/robbyjo/Grok-Workbench/actions/runs/39501321274). Approval semantics use protocol-fixture validation, not a live model/tool approval claim.
 
 Version **0.8.0** adds reviewed managed task worktree → configured tests → selected-file apply, with real OAuth GUI acceptance; lazy Monaco/local language workers and bounded relative-import navigation; compatible same-pinned-format engine upgrades with verified profile backups; repaired canonical Windows CI Git ancestry; gated SignPath CI signing and exact-tested-artifact manual publication. See [task scope](TASK-WORKFLOW.md), [editor scope](CODE-EDITOR.md), [upgrade scope](PORTABLE-UPDATES.md), and [remaining release gates](RELEASE-GATES.md). Full project LSP, unknown schema migrations, Foundation enrollment/live signing, HTTP OAuth lifecycle and Windows containment remain open.
 
