@@ -8,6 +8,8 @@ Build/typechecks, all **90 backend tests**, and the **Settings, storage/update a
 
 The Updates tab now separates installation status, release selection and installation options, with stacked checkbox rows, wrapped guidance and visible button boundaries. Its native GUI regression checks interaction, row separation and horizontal overflow in a 1100 px window with dark/100% and light/175% UI text. Screenshots were inspected locally. Hosted, packaged and publication acceptance are pending at this source stage; their completed results will be recorded after publication.
 
+The first hosted candidate passed the repaired storage and Updates checks but exposed an existing terminal-readiness race in the appearance scenario. That test now waits for the PowerShell prompt and confirms its variable assignment executed before changing appearance, then verifies the same shell retains the variable afterward. The failed run produced no release artifact.
+
 ## Version 0.8.2 publication (October 20)
 
 [v0.8.2](https://github.com/robbyjo/Grok-Workbench/releases/tag/v0.8.2) is published as **Grok Workbench 0.8.2 (alpha)** and GitHub Latest. Its immutable tag points to `77df5bc51c9e67f1b6580becd1befb680fd3480f`. [Windows CI](https://github.com/robbyjo/Grok-Workbench/actions/runs/39520262814) passed formatting/build/types, early regressions including the 1100 px Settings scenario, **89 backend tests with one optional historical-portable fixture skipped**, **ten source and ten packaged GUI scenarios**, actual portable launch/relocation/profile persistence, and actual replacement/restart/rollback. The native build used the restored Cargo cache.

@@ -66,12 +66,32 @@ test('appearance updates open surfaces independently, validates settings, and su
     await expect(page.locator('.markdown').first()).toContainText('Readable log sample');
     await page.getByRole('button', { name: 'Toggle terminal', exact: true }).click();
     await expect(page.locator('.xterm')).toBeVisible();
+    // The terminal surface can mount before PowerShell finishes initializing.
+    // Wait for the prompt, then confirm the assignment executed before changing appearance.
+    await expect
+      .poll(
+        () =>
+          page.evaluate(
+            async () => (await window.desktop.call('terminal:open', { id: 't' })).buffer,
+          ),
+        { timeout: 30_000 },
+      )
+      .toMatch(/PS [^\r\n>]+> /);
     await page.evaluate(() =>
       window.desktop.call('terminal:write', {
         id: 't',
-        data: "$appearanceMarker = 'PRESERVED';\r",
+        data: "$appearanceMarker = 'PRESERVED'; Write-Output ('APPEARANCE_' + 'READY');\r",
       }),
     );
+    await expect
+      .poll(
+        () =>
+          page.evaluate(
+            async () => (await window.desktop.call('terminal:open', { id: 't' })).buffer,
+          ),
+        { timeout: 30_000 },
+      )
+      .toContain('APPEARANCE_READY');
     await page.getByRole('button', { name: 'Files', exact: true }).click();
     await page.getByRole('button', { name: 'example.ts', exact: true }).click();
     await expect(page.locator('.monaco-editor textarea').first()).toBeVisible();
@@ -102,8 +122,12 @@ test('appearance updates open surfaces independently, validates settings, and su
       }),
     );
     await expect
-      .poll(() =>
-        page.evaluate(async () => (await window.desktop.call('terminal:open', { id: 't' })).buffer),
+      .poll(
+        () =>
+          page.evaluate(
+            async () => (await window.desktop.call('terminal:open', { id: 't' })).buffer,
+          ),
+        { timeout: 30_000 },
       )
       .toContain('APPEARANCE_PRESERVED');
     await page.screenshot({ path: '.test-data/appearance-light-workspace.png' });
