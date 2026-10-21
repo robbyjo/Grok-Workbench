@@ -75,9 +75,13 @@ test('settings categories retain drafts, unlock interrupted selectors and persis
   let app = await launch();
   try {
     let page = await app.firstWindow();
+    // The hosted Windows desktop can be narrower than a developer's display.
+    // The permission selector must remain visible below the old 1200px breakpoint.
+    await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setSize(1100, 800));
     const composerMode = page
       .locator('.composer')
       .getByRole('combobox', { name: 'Permission mode for this chat', exact: true });
+    await expect(composerMode).toBeVisible();
     await expect(composerMode).toHaveValue('ask');
     await expect(composerMode.locator('option')).toHaveText([
       'Always ask',

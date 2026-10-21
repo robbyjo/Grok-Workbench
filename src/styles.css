@@ -1754,9 +1754,6 @@ mark {
   .inspector {
     width: 290px;
   }
-  .permission-label {
-    display: none;
-  }
   .breadcrumbs strong {
     max-width: 170px;
   }
