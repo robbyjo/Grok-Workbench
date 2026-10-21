@@ -13,6 +13,7 @@ import {
 import { resolve, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 test('aggregate quota blocks native work; reviewed retention cancels, exports/prunes, restores and refuses overwrite', async () => {
+  test.setTimeout(180_000);
   await mkdir('.test-data', { recursive: true });
   const root = await mkdtemp(resolve('.test-data/storage-ui-')),
     desktop = join(root, 'desktop'),
@@ -75,6 +76,7 @@ test('aggregate quota blocks native work; reviewed retention cancels, exports/pr
       GROK_HOME: home,
       XAI_API_KEY: '',
       GROK_CODE_XAI_API_KEY: '',
+      GROK_DEPLOYMENT_KEY: '',
     },
   });
   try {
@@ -83,8 +85,15 @@ test('aggregate quota blocks native work; reviewed retention cancels, exports/pr
     await page.getByRole('tab', { name: 'Storage & diagnostics', exact: true }).click();
     const modal = page.getByRole('dialog', { name: 'Settings', exact: true });
     await modal.getByLabel('Aggregate desktop and Grok profile budget (MiB)').fill('256');
-    await modal.getByRole('button', { name: 'Save desktop preferences', exact: true }).click();
+    const save = modal.getByRole('button', { name: 'Save desktop preferences', exact: true });
+    await save.click();
+    // A real profile inventory precedes the write; wait for completion rather than
+    // treating the default five-second assertion window as a storage deadline.
+    await expect(save).toBeEnabled({ timeout: 45_000 });
     await expect(modal.getByText('Desktop preferences saved.', { exact: true })).toBeVisible();
+    const saved = JSON.parse(await readFile(join(desktop, 'state.json'), 'utf8'));
+    expect(saved.settings.profileMiB).toBe(256);
+    expect(saved.settings.storageMiB).toBe(512);
     await page.evaluate(async () => {
       await window.desktop.call('agent:disconnect', { id: 'active' });
       await window.desktop.call('agent:disconnect', { id: 'old' });

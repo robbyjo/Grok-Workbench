@@ -2,11 +2,11 @@
 
 A Windows-first desktop application with **Grok Build built in**, supporting Grok account OAuth and xAI API keys. The target is comparable local coding workflows to Codex wherever Grok supports them. This is an independent Apache-2.0 project; full workflow parity is still being developed.
 
-**0.8.2 alpha · Windows 10/11 x64 · portable executable.** macOS, Linux and ARM64 are future targets. See [TODO.md](TODO.md), the [parity audit](docs/PARITY.md), and [validation evidence](docs/VALIDATION.md).
+**0.8.3 alpha · Windows 10/11 x64 · portable executable.** macOS, Linux and ARM64 are future targets. See [TODO.md](TODO.md), the [parity audit](docs/PARITY.md), and [validation evidence](docs/VALIDATION.md).
 
-[Download the Windows portable executable](https://github.com/robbyjo/Grok-Workbench/releases/download/v0.8.2/Grok-Workbench-0.8.2-Portable.exe) · [SHA-256 checksum](https://github.com/robbyjo/Grok-Workbench/releases/download/v0.8.2/Grok-Workbench-0.8.2-Portable.exe.sha256) · [Release notes](https://github.com/robbyjo/Grok-Workbench/releases/tag/v0.8.2)
+[Download the Windows portable executable](https://github.com/robbyjo/Grok-Workbench/releases/download/v0.8.3/Grok-Workbench-0.8.3-Portable.exe) · [SHA-256 checksum](https://github.com/robbyjo/Grok-Workbench/releases/download/v0.8.3/Grok-Workbench-0.8.3-Portable.exe.sha256) · [Release notes](https://github.com/robbyjo/Grok-Workbench/releases/tag/v0.8.3)
 
-**New in 0.8.2:** selectable chat permissions (Always ask, Approve for me, Approve all), saved new-chat permission defaults, corrected live mode-change messages, category tabs in Settings, and model/effort controls that recover after interrupted turns. See [0.8.2 changes](docs/RELEASE-0.8.2.md). Includes the [appearance controls](docs/RELEASE-0.8.1.md), [task → test → review](docs/TASK-WORKFLOW.md), [Monaco editor](docs/CODE-EDITOR.md), profile backup and CI publication workflows. [Code signing policy](docs/CODE-SIGNING-POLICY.md) · [Privacy](docs/PRIVACY.md); SignPath enrollment/approval remains pending.
+**New in 0.8.3:** clearer Updates groups, properly spaced options and buttons, and visible progress while saving desktop preferences. Storage acceptance waits for the real write and verifies the saved budget. See [0.8.3 changes](docs/RELEASE-0.8.3.md). Includes [selectable permissions and categorized Settings](docs/RELEASE-0.8.2.md), [appearance controls](docs/RELEASE-0.8.1.md), [task → test → review](docs/TASK-WORKFLOW.md), [Monaco editor](docs/CODE-EDITOR.md), profile backup and CI publication workflows. [Code signing policy](docs/CODE-SIGNING-POLICY.md) · [Privacy](docs/PRIVACY.md); SignPath enrollment/approval remains pending.
 
 ## Run on Windows
 

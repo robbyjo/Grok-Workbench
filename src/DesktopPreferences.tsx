@@ -16,6 +16,7 @@ export default function DesktopPreferences({
     [report, setReport] = useState<Wire>(),
     [error, setError] = useState(''),
     [notice, setNotice] = useState(''),
+    [saving, setSaving] = useState(false),
     [selected, setSelected] = useState<string[]>([]);
   async function inspect() {
     try {
@@ -39,6 +40,7 @@ export default function DesktopPreferences({
           <label>
             <input
               type="checkbox"
+              disabled={saving}
               checked={notifications}
               onChange={(e) => setNotifications(e.target.checked)}
             />
@@ -52,6 +54,7 @@ export default function DesktopPreferences({
             Desktop database budget (MiB)
             <input
               type="number"
+              disabled={saving}
               min={64}
               max={2048}
               value={budget}
@@ -66,6 +69,7 @@ export default function DesktopPreferences({
             Aggregate desktop and Grok profile budget (MiB)
             <input
               type="number"
+              disabled={saving}
               min={256}
               max={1048576}
               value={profileBudget}
@@ -86,6 +90,7 @@ export default function DesktopPreferences({
               {key}
               <input
                 aria-label={`Shortcut ${key}`}
+                disabled={saving}
                 value={value}
                 onChange={(e) => setShortcuts({ ...shortcuts, [key]: e.target.value })}
               />
@@ -94,7 +99,11 @@ export default function DesktopPreferences({
         </>
       )}
       <button
+        disabled={saving}
         onClick={async () => {
+          setSaving(true);
+          setNotice('');
+          setError('');
           try {
             await window.desktop.call('preferences:save', {
               ...(section === 'shortcuts'
@@ -107,14 +116,19 @@ export default function DesktopPreferences({
             setError('');
           } catch (e) {
             setError(String(e));
+          } finally {
+            setSaving(false);
           }
         }}
       >
         Save desktop preferences
       </button>
       {section === 'shortcuts' && (
-        <button onClick={() => setShortcuts({ ...defaultShortcuts })}>Reset shortcut fields</button>
+        <button disabled={saving} onClick={() => setShortcuts({ ...defaultShortcuts })}>
+          Reset shortcut fields
+        </button>
       )}
+      {saving && <p role="status">Saving desktop preferences…</p>}
       {notice && <p role="status">{notice}</p>}
       {error && <p role="alert">{error}</p>}
       {section === 'storage' && (

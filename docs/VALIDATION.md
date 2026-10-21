@@ -1,6 +1,12 @@
 # Validation record
 
-Current source version: **Grok Workbench 0.8.2**, with the Grok Rust library embedded instead of a packaged CLI. Validation was performed on Windows x64; dates below use America/New_York. Earlier sections retain historical version-specific names and results.
+Current source version: **Grok Workbench 0.8.3**, with the Grok Rust library embedded instead of a packaged CLI. Validation was performed on Windows x64; dates below use America/New_York. Earlier sections retain historical version-specific names and results.
+
+## Version 0.8.3 maintenance (October 20, local source)
+
+Build/typechecks, all **90 backend tests**, and the **Settings, storage/update and Updates layout GUI scenarios** pass locally. The storage failure was a five-second success-message deadline while a real profile inventory/write took approximately 30 seconds; the persisted budget and operation log confirmed completion. Desktop preferences now expose pending progress, disable duplicate saves and edits during the write, and clear stale feedback. The regression waits for save completion and verifies the persisted budget before exercising quota refusal and export/prune/restore safety. Windows CI runs the storage and Updates layout checks before native compilation too.
+
+The Updates tab now separates installation status, release selection and installation options, with stacked checkbox rows, wrapped guidance and visible button boundaries. Its native GUI regression checks interaction, row separation and horizontal overflow in a 1100 px window with dark/100% and light/175% UI text. Screenshots were inspected locally. Hosted, packaged and publication acceptance are pending at this source stage; their completed results will be recorded after publication.
 
 ## Version 0.8.2 publication (October 20)
 

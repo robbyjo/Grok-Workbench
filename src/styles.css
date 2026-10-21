@@ -1564,6 +1564,65 @@ mark {
 .settings-panel[hidden] {
   display: none;
 }
+.update-settings {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.update-settings > h3,
+.update-settings p,
+.update-group h4 {
+  margin: 0;
+}
+.update-settings p {
+  line-height: 1.5;
+}
+.update-group {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.update-group h4 {
+  font-size: inherit;
+}
+.update-option {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  line-height: 1.5;
+  cursor: pointer;
+}
+.update-option input[type='checkbox'] {
+  margin: 0.3em 0 0;
+}
+.update-help {
+  color: var(--muted);
+}
+.update-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.update-actions > button {
+  max-width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--surface-2);
+  white-space: normal;
+  text-align: left;
+}
+.update-settings pre {
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
 .settings-panel > .mcp-settings:first-child {
   margin-top: 8px;
   border-top: 0;
