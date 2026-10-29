@@ -1,6 +1,18 @@
 # Validation record
 
-Current source version: **Grok Workbench 0.8.3**, with the Grok Rust library embedded instead of a packaged CLI. Validation was performed on Windows x64; dates below use America/New_York. Earlier sections retain historical version-specific names and results.
+Current source version: **Grok Workbench 0.8.4**, with the Grok Rust library embedded instead of a packaged CLI. Validation was performed on Windows x64; dates below use America/New_York. Earlier sections retain historical version-specific names and results.
+
+## Version 0.8.4 publication (October 29)
+
+[v0.8.4](https://github.com/robbyjo/Grok-Workbench/releases/tag/v0.8.4) is published as **Grok Workbench 0.8.4 (alpha)** and GitHub Latest. Its immutable tag points to `77d3c999d23a315e32a7a4162ef342a08a324fe2`. [Windows CI](https://github.com/robbyjo/Grok-Workbench/actions/runs/40942229846) passed formatting/build/types, **45 early backend checks and nine early desktop scenarios**, **96 backend tests with one optional published-portable fixture skipped**, **12 source and 12 packaged GUI scenarios**, actual portable launch/relocation, and replacement/restart/rollback with profile preservation. The update fixture uses private same-version packages with different compression; signed published newer-version update acceptance remains open.
+
+[Publication](https://github.com/robbyjo/Grok-Workbench/actions/runs/40948591831) passed and published that exact tested artifact. Release ID: `428357213`. The Windows x64 executable is **146,295,300 bytes**, SHA-256 **`df4187e68d4cad304e4655c2a376a5ce358bc6c12c0b904ce783e4505c7dd41e`**, PE product/version Grok Workbench / 0.8.4, Authenticode **NotSigned**. Embedded engine SHA-256: `a456ff8287ec8d76d40ef1ce7bb499b054c8fc968a8a6c9db5ce405f14e6810e`. All three files were downloaded unauthenticated from the public release and compared byte-for-byte with CI; GitHub asset sizes/digests, manifest/checksum, tag target and Latest were independently checked. The v0.8.3 release ID, tag target, asset IDs, sizes and digests remain unchanged.
+
+The release adds [five local workflow improvements](RELEASE-0.8.4.md): structured questions, automatic workspace/editor/Git refresh with draft comparison, per-turn reported-edit review, explicit durable unread receipts, and screenshot paste/file drops. Protocol fixtures cover question round trips and cleanup; actual Windows filesystem notifications, stale read acknowledgements, edit-chain boundaries, native clipboard import, OS-backed File drop and restart recovery are exercised. These checks do not establish new live model/provider acceptance or physical Explorer drag-and-drop testing.
+
+Hosted acceptance exposed transient Windows `EPERM` errors replacing editor files. A real deny-delete sharing lock reproduces the failure against the original save; bounded retries pass while refusing intervening external edits and cleaning up persistent-lock failures. A delayed disk-read negative control also fails against the original renderer and passes with the keyboard-save/reconciliation fix. Local final validation passed all **97 backend tests and 12 desktop scenarios**. These regressions run before native compilation in CI.
+
+The desktop/history schemas, binding ABI and pinned native storage contract remain unchanged. The CI native binary differs from v0.8.3, so the compatible-engine automatic-update path still requires its reviewed, verified profile backup. Manual replacement must retain the adjacent **Grok Desktop Data** folder. Signing, pristine-machine, reboot/token-expiry, external HTTP OAuth, containment and full screen-reader gates remain open.
 
 ## Version 0.8.3 publication (October 20)
 
