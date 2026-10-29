@@ -110,18 +110,23 @@ test('workflow improvements: disk reconciliation, per-turn review, unread persis
     await app.evaluate(async ({ clipboard, ClipboardItem, nativeImage }) => {
       const previous = await clipboard.read();
       (globalThis as any).workflowClipboard = await Promise.all(
-        previous.map(
-          async (item) =>
-            new ClipboardItem(
-              Object.fromEntries(
-                await Promise.all(item.types.map(async (type) => [type, await item.getType(type)])),
+        previous
+          .filter((item) => item.types.length > 0)
+          .map(
+            async (item) =>
+              new ClipboardItem(
+                Object.fromEntries(
+                  await Promise.all(
+                    item.types.map(async (type) => [type, await item.getType(type)]),
+                  ),
+                ),
               ),
-            ),
-        ),
+          ),
       );
       const png = nativeImage
         .createFromBitmap(Buffer.alloc(16 * 16 * 4, 255), { width: 16, height: 16 })
         .toPNG();
+      (globalThis as any).workflowClipboardImage = png;
       await clipboard.write([new ClipboardItem({ 'image/png': new Blob([png]) })]);
       if (!(await clipboard.has('image/png')))
         throw new Error('Fixture clipboard image was not written.');
@@ -195,7 +200,14 @@ test('workflow improvements: disk reconciliation, per-turn review, unread persis
     await app
       .evaluate(async ({ clipboard }) => {
         const previous = (globalThis as any).workflowClipboard;
-        if (previous) await clipboard.write(previous);
+        const expected = (globalThis as any).workflowClipboardImage;
+        const item = (await clipboard.read()).find((i) => i.types.includes('image/png'));
+        // Do not overwrite a new clipboard value copied by the user during the test.
+        if (!previous || !expected || !item) return;
+        const current = Buffer.from(await (await item.getType('image/png')).arrayBuffer());
+        if (!current.equals(expected)) return;
+        if (previous.length) await clipboard.write(previous);
+        else clipboard.clear();
       })
       .catch(() => {});
     await app.evaluate(({ app }) => app.exit(0)).catch(() => {});
