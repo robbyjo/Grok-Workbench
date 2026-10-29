@@ -50,7 +50,7 @@ jobs:
         run: npm run build
       - name: Desktop regressions before native compilation
         run: |
-          npx tsx --test tests/agent.test.ts tests/workspace.test.ts tests/search-projects.test.ts tests/workflow-improvements.test.ts
+          npx tsx --test tests/agent.test.ts tests/edit-git.test.ts tests/workspace.test.ts tests/search-projects.test.ts tests/workflow-improvements.test.ts
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           npx playwright test tests/ui/appearance.spec.ts tests/ui/code-editor.spec.ts tests/ui/desktop.spec.ts tests/ui/local-workflows.spec.ts tests/ui/search-projects.spec.ts tests/ui/settings.spec.ts tests/ui/storage-update.spec.ts tests/ui/updates-layout.spec.ts tests/ui/workflow-improvements.spec.ts
       - name: Record native cache build image

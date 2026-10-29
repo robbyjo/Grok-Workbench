@@ -12,6 +12,7 @@ import {
 import { constants } from 'node:fs';
 import { dirname, join, relative, sep, posix } from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
+import { setTimeout as delay } from 'node:timers/promises';
 import { inside, insideFuture } from './paths';
 import type { TextDocument } from '../shared/types';
 
@@ -160,14 +161,32 @@ export async function saveDocument(
       await handle.close();
     }
     await chmod(temporary, info.mode & 0o777);
-    const current = await editable(canonicalRoot, path);
-    if (
-      current.target !== target ||
-      (await inside(canonicalRoot, temporary)) !== temporary ||
-      revision(await readFile(target)) !== expected
-    )
-      throw new Error('File changed on disk. Your draft was kept; reload the file before saving.');
-    await rename(temporary, target);
+    for (let attempt = 0; ; attempt++) {
+      const current = await editable(canonicalRoot, path);
+      if (
+        current.target !== target ||
+        (await inside(canonicalRoot, temporary)) !== temporary ||
+        revision(await readFile(target)) !== expected
+      )
+        throw new Error(
+          'File changed on disk. Your draft was kept; reload the file before saving.',
+        );
+      if (!(current.info.mode & 0o222)) throw new Error('This file is read-only.');
+      try {
+        await rename(temporary, target);
+        break;
+      } catch (error) {
+        // Windows readers/scanners may briefly deny atomic replacement. Keep the
+        // original intact, and recheck its path and revision before every retry.
+        if (
+          process.platform !== 'win32' ||
+          attempt >= 7 ||
+          !['EPERM', 'EACCES', 'EBUSY'].includes((error as NodeJS.ErrnoException).code ?? '')
+        )
+          throw error;
+        await delay(Math.min(25 * 2 ** attempt, 200));
+      }
+    }
     return { text, revision: revision(Buffer.from(text, 'utf8')) };
   } finally {
     saving.delete(target);

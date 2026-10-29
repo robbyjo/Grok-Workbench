@@ -12,6 +12,9 @@ import {
 } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { spawn } from 'node:child_process';
+import { once } from 'node:events';
+import { setTimeout as delay } from 'node:timers/promises';
 import {
   openDocument,
   saveDocument,
@@ -94,6 +97,83 @@ test('editor atomically saves UTF-8/BOM/CRLF, rejects changed content and leaves
   assert.equal(await readFile(path, 'utf8'), 'Changed by another process');
   assert.deepEqual(await readdir(root), ['file.txt']);
 });
+
+test(
+  'Windows atomic saves survive a brief delete lock, refuse intervening edits and bound permanent-lock retries',
+  { skip: process.platform !== 'win32' },
+  async () => {
+    const root = await mkdtemp(join(tmpdir(), 'grok-editor-lock-')),
+      path = join(root, 'file.txt');
+    await writeFile(path, 'original');
+    async function lock() {
+      const child = spawn(
+        'powershell.exe',
+        [
+          '-NoProfile',
+          '-NonInteractive',
+          '-Command',
+          "$ErrorActionPreference='Stop';$taskLock=[IO.File]::Open($env:GROK_EDITOR_LOCK_PATH,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::ReadWrite);try{[Console]::Out.WriteLine('LOCKED');[Console]::Out.Flush();[Console]::In.ReadLine()|Out-Null}finally{$taskLock.Dispose()}",
+        ],
+        { env: { ...process.env, GROK_EDITOR_LOCK_PATH: path }, windowsHide: true },
+      );
+      const exited = once(child, 'exit');
+      const ready = await Promise.race([
+        once(child.stdout, 'data').then(([data]) => String(data)),
+        exited.then(() => {
+          throw new Error('File-lock fixture exited before locking.');
+        }),
+      ]);
+      assert.match(ready, /LOCKED/);
+      let releasing: Promise<unknown> | undefined;
+      return () => {
+        if (!releasing) {
+          child.stdin.end('\n');
+          releasing = exited;
+        }
+        return releasing;
+      };
+    }
+    const first = await openDocument(root, 'file.txt');
+    let unlock = await lock();
+    try {
+      const release = delay(150).then(unlock);
+      const saved = await saveDocument(root, 'file.txt', 'saved after lock', first.revision);
+      await release;
+      assert.equal(saved.text, await readFile(path, 'utf8'));
+    } finally {
+      await unlock();
+    }
+
+    const current = await openDocument(root, 'file.txt');
+    unlock = await lock();
+    try {
+      const change = delay(80).then(() => writeFile(path, 'external edit'));
+      const release = delay(200).then(unlock);
+      await assert.rejects(
+        saveDocument(root, 'file.txt', 'must not overwrite', current.revision),
+        /changed on disk/,
+      );
+      await change;
+      await release;
+      assert.equal(await readFile(path, 'utf8'), 'external edit');
+    } finally {
+      await unlock();
+    }
+
+    const external = await openDocument(root, 'file.txt');
+    unlock = await lock();
+    try {
+      await assert.rejects(
+        saveDocument(root, 'file.txt', 'still locked', external.revision),
+        (error: NodeJS.ErrnoException) => ['EPERM', 'EACCES', 'EBUSY'].includes(error.code ?? ''),
+      );
+      assert.equal(await readFile(path, 'utf8'), 'external edit');
+      assert.deepEqual(await readdir(root), ['file.txt']);
+    } finally {
+      await unlock();
+    }
+  },
+);
 test('editor rejects traversal, external symlinks, hardlinks, Git metadata, binary and invalid UTF-8', async () => {
   const folder = await mkdtemp(join(tmpdir(), 'grok-editor-path-')),
     root = join(folder, 'project');
