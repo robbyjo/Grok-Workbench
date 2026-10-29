@@ -18,7 +18,7 @@ export class WorkspaceWatch {
     const generation = this.generation;
     const canonical = realpathSync.native(root);
     const normalize = (p: string) => (process.platform === 'win32' ? p.toLowerCase() : p);
-    const profilePath = profile ? normalize(resolve(profile)) : undefined;
+    const profilePath = profile ? normalize(realpathSync.native(profile)) : undefined;
     this.watcher = watch(canonical, { recursive: true }, (_event, name) => {
       const parts = String(name ?? '')
         .replaceAll('\\', '/')

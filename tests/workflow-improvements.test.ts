@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { Store } from '../electron/store';
@@ -86,7 +86,9 @@ test('recursive workspace watch observes real changes and detaches from the prev
     writeFileSync(join(second, 'file.txt'), 'second');
     for (let i = 0; i < 30 && count === previous; i++) await new Promise((r) => setTimeout(r, 50));
     assert.ok(count > previous);
-    watcher.start(second, () => count++, second);
+    const profileAlias = join(first, 'profile-alias');
+    symlinkSync(second, profileAlias, 'junction');
+    watcher.start(second, () => count++, profileAlias);
     const beforeProfileWrite = count;
     writeFileSync(join(second, 'state.json'), '{}');
     await new Promise((r) => setTimeout(r, 350));
