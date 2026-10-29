@@ -1,6 +1,13 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, webUtils } from 'electron';
 import type { DesktopAPI, DesktopEvent } from '../shared/types';
 const methods = new Set([
+  'questions',
+  'question:answer',
+  'files:watch',
+  'thread:read-state',
+  'review:turn',
+  'attachments:drop',
+  'attachments:paste',
   'workflow:list',
   'workflow:preview',
   'workflow:start',
@@ -140,6 +147,7 @@ const methods = new Set([
   'workspace:reveal',
 ]);
 const api: DesktopAPI = {
+  filePath: (file) => webUtils.getPathForFile(file),
   call: (method, args = {}) => {
     if (!methods.has(method)) return Promise.reject(new Error('Unknown desktop operation.'));
     return ipcRenderer.invoke('desktop:call', method, args);

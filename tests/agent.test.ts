@@ -9,6 +9,35 @@ import { Store } from '../electron/store';
 import { Agents } from '../electron/agent';
 import type { DesktopEvent } from '../shared/types';
 const fixture = resolve('tests/fixtures/agent.mjs');
+for (const scenario of ['questions', 'questions-prefixed'])
+  test(`native question round trip and cleanup: ${scenario}`, async () => {
+    const { agents, thread } = setup(scenario);
+    try {
+      const pending = agents.prompt(thread.id, 'Ask me', []);
+      await until(() => agents.questionsSnapshot().length === 1);
+      const question = agents.questionsSnapshot()[0];
+      assert.equal(thread.status, 'approval');
+      assert.throws(() => agents.answerQuestion(question.id, { answers: [] }));
+      agents.answerQuestion(question.id, {
+        answers: [
+          { selected: ['Local'], notes: '' },
+          { selected: [], notes: 'Keep files' },
+        ],
+      });
+      await pending;
+      assert.equal(agents.questionsSnapshot().length, 0);
+      assert.ok(thread.entries.some((e) => e.text.includes('Keep files')));
+      assert.ok(thread.readState?.firstUnread);
+      assert.throws(() => agents.answerQuestion(question.id, { cancel: true }), /no longer/);
+      const cancel = agents.prompt(thread.id, 'Cancel this question', []);
+      await until(() => agents.questionsSnapshot().length === 1);
+      agents.cancel(thread.id);
+      await cancel;
+      assert.equal(agents.questionsSnapshot().length, 0);
+    } finally {
+      agents.shutdown();
+    }
+  });
 const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 async function until(check: () => boolean) {
   for (let i = 0; i < 100; i++) {

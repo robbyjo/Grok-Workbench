@@ -104,6 +104,25 @@ export class History {
       hasNewer: end < total,
     };
   }
+  turn(id: string, turn: string) {
+    const entries: Entry[] = [];
+    let bytes = 0,
+      truncated = false;
+    for (const row of this.db
+      .prepare(
+        "SELECT document FROM entries WHERE thread=? AND json_extract(document,'$.turn')=? ORDER BY pos",
+      )
+      .iterate(id, turn)) {
+      const document = String(row.document);
+      bytes += Buffer.byteLength(document);
+      if (bytes > 4 * 1024 * 1024 || entries.length >= 1000) {
+        truncated = true;
+        break;
+      }
+      entries.push(JSON.parse(document));
+    }
+    return { entries, truncated };
+  }
   value(key: string) {
     const row = this.db.prepare('SELECT value FROM values_store WHERE key=?').get(key) as any;
     return row ? JSON.parse(row.value) : undefined;

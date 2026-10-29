@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, existsSync } from 'node:fs';
+import { mkdtempSync, existsSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath as filePath } from 'node:url';
@@ -11,6 +11,13 @@ test('media retains original binary files, scoped URLs, range playback and expli
   const history = new History(join(root, 'history.sqlite'), 64);
   const media = new Media(join(root, 'assets'), history);
   try {
+    const text = join(root, 'dropped.txt');
+    writeFileSync(text, 'DROP_CONTENT');
+    assert.throws(() => media.attachMany([text, join(root, 'missing-file')]));
+    assert.equal(media.list().length, 0);
+    const dropped = media.attachMany([text]);
+    assert.equal(media.attachment(dropped[0].id).text, 'DROP_CONTENT');
+    media.delete(dropped[0].id);
     const png = Buffer.from(
       'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/lFEAAAAASUVORK5CYII=',
       'base64',

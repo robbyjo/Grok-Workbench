@@ -113,6 +113,28 @@ createInterface({ input: process.stdin }).on('line', (line) => {
     });
   } else if (message.method === 'session/prompt') {
     promptId = message.id;
+    if (scenario === 'questions' || scenario === 'questions-prefixed') {
+      send({
+        id: 904,
+        method: scenario === 'questions' ? 'x.ai/ask_user_question' : '_x.ai/ask_user_question',
+        params: {
+          sessionId,
+          toolCallId: 'question-tool',
+          mode: 'default',
+          questions: [
+            {
+              question: 'Which approach?',
+              options: [
+                { label: 'Local', description: 'Use local tools', preview: 'local preview' },
+                { label: 'Remote', description: 'Use a service' },
+              ],
+            },
+            { question: 'Any details?', options: [], multiSelect: false },
+          ],
+        },
+      });
+      return;
+    }
     if (scenario === 'remember-approval' && alwaysApprove) {
       update({
         sessionUpdate: 'agent_message_chunk',
@@ -158,6 +180,12 @@ createInterface({ input: process.stdin }).on('line', (line) => {
         ],
       },
     });
+  } else if (message.id === 904 && message.result) {
+    update({
+      sessionUpdate: 'agent_message_chunk',
+      content: { type: 'text', text: JSON.stringify(message.result) },
+    });
+    result(promptId, { stopReason: 'end_turn' });
   } else if (message.id === 902 && message.result) {
     if (!permission) throw new Error('Unexpected permission answer');
     const selected = message.result.outcome.optionId;

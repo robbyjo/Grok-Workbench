@@ -12,6 +12,8 @@ import {
   type PermissionMode,
 } from '../shared/permissions';
 import { nativeMethods, extensionResult, publicAgent } from './native-extensions';
+import { questions, questionReply } from './questions';
+import type { UserQuestion } from '../shared/types';
 
 interface Connection {
   rpc: RpcClient;
@@ -23,6 +25,27 @@ interface Connection {
   autoPermissionModeEnabled?: boolean;
 }
 export class Agents {
+  private questions = new Map<
+    string,
+    { question: UserQuestion; rpc: RpcClient; rpcId: string | number }
+  >();
+  questionsSnapshot() {
+    return [...this.questions.values()].map((item) => item.question);
+  }
+  answerQuestion(id: string, input: Wire) {
+    const pending = this.questions.get(id);
+    if (!pending) throw new Error('Question is no longer pending.');
+    pending.rpc.respond(pending.rpcId, questionReply(pending.question, input));
+    this.questions.delete(id);
+    this.emit({ type: 'question-closed', id });
+    const thread = this.store.thread(pending.question.threadId);
+    if (
+      !this.questionsSnapshot().some((q) => q.threadId === thread.id) &&
+      !this.permissionsSnapshot().some((p) => p.threadId === thread.id)
+    )
+      thread.status = this.connections.get(thread.id)?.turn ? 'running' : 'idle';
+    this.store.touch();
+  }
   canStart = () => true;
   canConnect = () => true;
   beforeWork = async () => {};
@@ -105,6 +128,26 @@ export class Agents {
       }
       if (message.method === 'session/update' && message.params?.sessionId === thread.sessionId) {
         if (!message.params.update) return;
+        const update = message.params.update;
+        if (
+          update.sessionUpdate === 'tool_call_update' &&
+          ['completed', 'failed'].includes(update.status)
+        ) {
+          for (const [key, pending] of this.questions) {
+            if (
+              pending.question.threadId === id &&
+              pending.question.toolCallId === update.toolCallId
+            ) {
+              this.questions.delete(key);
+              this.emit({ type: 'question-closed', id: key });
+              if (
+                !this.questionsSnapshot().some((q) => q.threadId === id) &&
+                !this.permissionsSnapshot().some((p) => p.threadId === id)
+              )
+                thread.status = connection.turn ? 'running' : 'idle';
+            }
+          }
+        }
         if (!connection.loading && message.params.update.sessionUpdate !== 'user_message_chunk')
           this.store.update(id, message.params.update, connection.turn);
         else if (connection.loading && !connection.suppressReplay)
@@ -112,6 +155,36 @@ export class Agents {
       }
     });
     connection.rpc.on('request', (message: Wire) => {
+      if (['x.ai/ask_user_question', '_x.ai/ask_user_question'].includes(message.method)) {
+        const params = message.params?.params ?? message.params;
+        if (params?.sessionId !== thread.sessionId) {
+          connection.rpc.respond(message.id, { outcome: 'cancelled' });
+          return;
+        }
+        try {
+          if (
+            typeof params.toolCallId !== 'string' ||
+            !params.toolCallId ||
+            params.toolCallId.length > 1000
+          )
+            throw new Error('Invalid question tool identifier.');
+          const question: UserQuestion = {
+            toolCallId: params.toolCallId,
+            id: randomUUID(),
+            threadId: id,
+            mode: params.mode === 'plan' ? 'plan' : 'default',
+            questions: questions(params),
+          };
+          if (this.questions.size >= 32) throw new Error('Too many pending questions.');
+          this.questions.set(question.id, { question, rpc: connection.rpc, rpcId: message.id });
+          thread.status = 'approval';
+          this.store.touch();
+          this.emit({ type: 'question', question });
+        } catch (error) {
+          connection.rpc.reject(message.id, -32602, (error as Error).message);
+        }
+        return;
+      }
       if (['x.ai/folder_trust/request', '_x.ai/folder_trust/request'].includes(message.method)) {
         if (resolve(message.params?.cwd ?? '') !== resolve(thread.cwd)) {
           connection.rpc.respond(message.id, { outcome: 'reject' });
@@ -247,9 +320,11 @@ export class Agents {
       };
       const permissionMode = savedPermissionMode(thread);
       if (permissionMode !== undefined) this.notifyPermissionMode(id, permissionMode);
-      thread.status = this.permissionsSnapshot().some((item) => item.threadId === id)
-        ? 'approval'
-        : 'idle';
+      thread.status =
+        this.questionsSnapshot().some((q) => q.threadId === id) ||
+        this.permissionsSnapshot().some((item) => item.threadId === id)
+          ? 'approval'
+          : 'idle';
       thread.error = undefined;
       this.store.touch();
       return thread.session;
@@ -383,12 +458,21 @@ export class Agents {
         thread.status = 'error';
         thread.error = (error as Error).message;
       }
+      thread.entries.push({
+        id: randomUUID(),
+        type: 'notice',
+        text: 'Turn failed',
+        data: { error: (error as Error).message },
+        turn,
+      });
       throw error;
     } finally {
       clearTimeout(connection.cancelTimer);
       connection.turn = undefined;
       this.clearPermissions(id, true);
       thread.updatedAt = new Date().toISOString();
+      const resultEntry = thread.entries.at(-1);
+      if (resultEntry) this.store.completeResult(id, resultEntry.id);
       if (thread.status !== 'idle') for (const row of thread.queue ?? []) row.state = 'paused';
       this.store.flush();
       this.emit({ type: 'attention', id, kind: thread.status === 'idle' ? 'complete' : 'failure' });
@@ -645,12 +729,25 @@ export class Agents {
       thread.alwaysApprove = true;
       thread.permissionMode = 'always-approve';
     }
-    if (!this.permissionsSnapshot().some((item) => item.threadId === thread.id))
+    if (
+      !this.questionsSnapshot().some((q) => q.threadId === thread.id) &&
+      !this.permissionsSnapshot().some((item) => item.threadId === thread.id)
+    )
       thread.status = this.connections.get(thread.id)?.turn ? 'running' : 'idle';
     this.store.touch();
     if (enableAlwaysApprove) this.store.flush();
   }
   private clearPermissions(id: string, respond: boolean) {
+    for (const [key, pending] of this.questions) {
+      if (pending.question.threadId !== id) continue;
+      if (respond) {
+        try {
+          pending.rpc.respond(pending.rpcId, { outcome: 'cancelled' });
+        } catch {}
+      }
+      this.questions.delete(key);
+      this.emit({ type: 'question-closed', id: key });
+    }
     for (const [key, pending] of this.permissions)
       if (pending.permission.threadId === id) {
         if (respond) {

@@ -12,6 +12,7 @@ import {
 } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { DatabaseSync } from 'node:sqlite';
 test('aggregate quota blocks native work; reviewed retention cancels, exports/prunes, restores and refuses overwrite', async () => {
   test.setTimeout(180_000);
   await mkdir('.test-data', { recursive: true });
@@ -23,6 +24,17 @@ test('aggregate quota blocks native work; reviewed retention cancels, exports/pr
     exports = join(root, 'exports');
   await mkdir(session, { recursive: true });
   await mkdir(exports);
+  // Seed the supported native v4 cache explicitly. An account-only helper can
+  // leave an empty cache shell; pruning correctly refuses an unknown format.
+  const cache = new DatabaseSync(join(home, 'sessions', 'session_search.sqlite'));
+  cache.exec(`CREATE TABLE meta(key TEXT PRIMARY KEY,value TEXT NOT NULL);
+    INSERT INTO meta VALUES('session_search_schema_version','4');
+    CREATE TABLE session_docs(session_id TEXT PRIMARY KEY,cwd TEXT NOT NULL,updated_at INTEGER NOT NULL,title TEXT NOT NULL,content TEXT NOT NULL,content_hash TEXT NOT NULL);
+    CREATE VIRTUAL TABLE session_docs_fts USING fts5(title,content,content='session_docs',content_rowid='rowid');
+    CREATE TRIGGER session_docs_ai AFTER INSERT ON session_docs BEGIN INSERT INTO session_docs_fts(rowid,title,content) VALUES(new.rowid,new.title,new.content); END;
+    CREATE TRIGGER session_docs_ad AFTER DELETE ON session_docs BEGIN INSERT INTO session_docs_fts(session_docs_fts,rowid,title,content) VALUES('delete',old.rowid,old.title,old.content); END;
+    CREATE TRIGGER session_docs_au AFTER UPDATE ON session_docs BEGIN INSERT INTO session_docs_fts(session_docs_fts,rowid,title,content) VALUES('delete',old.rowid,old.title,old.content); INSERT INTO session_docs_fts(rowid,title,content) VALUES(new.rowid,new.title,new.content); END;`);
+  cache.close();
   await writeFile(join(session, 'summary.json'), JSON.stringify({ id: sid }));
   await writeFile(join(session, 'chat_history.jsonl'), 'RETENTION_GUI_NATIVE_FIXTURE');
   const old = new Date(Date.now() - 40 * 86400000);

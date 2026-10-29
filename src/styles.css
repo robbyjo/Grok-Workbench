@@ -2172,3 +2172,54 @@ pre,
 :root[data-theme='light'] .token.class-name {
   color: #245c9c;
 }
+/* Turn review and structured questions share the existing theme and font controls. */
+.turn-review {
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.turn-review summary {
+  cursor: pointer;
+}
+.turn-edit-versions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.turn-edit-versions pre {
+  max-height: 420px;
+  overflow: auto;
+  white-space: pre;
+}
+.user-questions fieldset {
+  margin: 12px 0;
+  min-width: 0;
+}
+.user-questions {
+  max-height: min(36vh, 400px);
+  overflow: auto;
+}
+.disk-comparison pre {
+  max-height: 240px;
+  overflow: auto;
+}
+.user-questions label {
+  display: block;
+  margin: 8px 0;
+}
+.user-questions small {
+  display: block;
+}
+.user-questions textarea {
+  width: 100%;
+  min-height: 64px;
+}
+.unread-badge {
+  color: var(--accent-text);
+}
+@media (max-width: 900px) {
+  .turn-edit-versions {
+    grid-template-columns: 1fr;
+  }
+}

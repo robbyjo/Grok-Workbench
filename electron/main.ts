@@ -1,4 +1,16 @@
-import { app, BrowserWindow, dialog, ipcMain, shell, Notification, protocol } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  dialog,
+  ipcMain,
+  shell,
+  Notification,
+  protocol,
+  clipboard,
+  nativeImage,
+} from 'electron';
+import { WorkspaceWatch } from './file-watch';
+import { turnEdits } from '../shared/turn-review';
 import { basename, join, isAbsolute, dirname, delimiter } from 'node:path';
 import { existsSync, mkdirSync, lstatSync, openSync, closeSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
@@ -72,6 +84,7 @@ let accountCancelled = false;
 let media: Media;
 const fileSearches = new Map<string, AbortController>();
 const generating = new Set<string>();
+const workspaceWatch = new WorkspaceWatch();
 protocol.registerSchemesAsPrivileged([
   {
     scheme: 'grok-media',
@@ -93,21 +106,28 @@ function emit(event: DesktopEvent) {
   if (
     store?.state.settings.notifications &&
     Notification.isSupported() &&
-    (event.type === 'attention' || event.type === 'permission') &&
+    (event.type === 'attention' || event.type === 'permission' || event.type === 'question') &&
     Date.now() - attentionAt > 3000 &&
     (!window || !window.isFocused())
   ) {
     attentionAt = Date.now();
     const notice = new Notification({
       title:
-        event.type === 'permission'
-          ? 'Grok needs your approval'
-          : event.kind === 'complete'
-            ? 'Grok turn completed'
-            : 'Grok turn stopped',
+        event.type === 'question'
+          ? 'Grok needs your input'
+          : event.type === 'permission'
+            ? 'Grok needs your approval'
+            : event.kind === 'complete'
+              ? 'Grok turn completed'
+              : 'Grok turn stopped',
       body: 'Open Grok Workbench to review the chat.',
     });
-    const id = event.type === 'permission' ? event.permission.threadId : event.id;
+    const id =
+      event.type === 'question'
+        ? event.question.threadId
+        : event.type === 'permission'
+          ? event.permission.threadId
+          : event.id;
     notice.on('click', () => {
       store.selected = id;
       emit({ type: 'focus-chat', id });
@@ -271,6 +291,51 @@ async function dispatch(method: string, args: Wire) {
     }
   };
   switch (method) {
+    case 'questions':
+      return agents.questionsSnapshot();
+    case 'question:answer':
+      return agents.answerQuestion(string(args.questionId, 'question ID', 100), args);
+    case 'thread:read-state': {
+      const item = thread();
+      item.readState ??= { revision: randomUUID() };
+      return store.markRead(item.id, args.revision, args.unread === true);
+    }
+    case 'files:watch': {
+      const item = thread();
+      workspaceWatch.start(
+        item.cwd,
+        () => emit({ type: 'files-changed', id: item.id }),
+        app.getPath('userData'),
+      );
+      return;
+    }
+    case 'review:turn': {
+      const item = thread();
+      store.flush();
+      const report = store.history.turn(item.id, string(args.turn, 'turn', 100));
+      const result = turnEdits(report.entries);
+      return { ...result, truncated: report.truncated || result.truncated };
+    }
+    case 'attachments:drop': {
+      await profileStorage.assertCapacity(store.state.settings.profileMiB ?? 4096);
+      if (!Array.isArray(args.paths) || !args.paths.length || args.paths.length > 5)
+        throw new Error('Drop up to five files.');
+      const paths = args.paths.map((p: unknown) => string(p, 'dropped file', 32000));
+      return media.attachMany(paths);
+    }
+    case 'attachments:paste': {
+      await profileStorage.assertCapacity(store.state.settings.profileMiB ?? 4096);
+      const items = await clipboard.read();
+      const item = items.find((i) => i.types.includes('image/png'));
+      if (!item) throw new Error('No image on the clipboard.');
+      const blob = await item.getType('image/png');
+      if (blob.size > 50 * 1024 * 1024) throw new Error('Clipboard image exceeds 50 MiB.');
+      const image = nativeImage.createFromBuffer(Buffer.from(await blob.arrayBuffer()));
+      if (image.isEmpty()) throw new Error('No image on the clipboard.');
+      const { width, height } = image.getSize();
+      if (width * height > 40_000_000) throw new Error('Clipboard image exceeds 40 megapixels.');
+      return [media.add(image.toPNG(), `Screenshot-${Date.now()}.png`, 'attachment')];
+    }
     case 'workflow:list':
       return taskWorkflows.list(thread().id);
     case 'workflow:preview':
@@ -1242,7 +1307,7 @@ async function dispatch(method: string, args: Wire) {
       });
       if (result.canceled) return [];
       if (result.filePaths.length > 5) throw new Error('Choose up to five files.');
-      return result.filePaths.map((path) => media.attach(path));
+      return media.attachMany(result.filePaths);
     }
     case 'terminal:open':
       return terminals.open(thread().id, thread().cwd, args.terminalId);
@@ -1532,6 +1597,7 @@ else {
   let shutdownFinished = false;
   let shutdownPending = false;
   app.on('will-quit', (event) => {
+    workspaceWatch.close();
     if (!shutdownFinished && (account || agents)) {
       event.preventDefault();
       if (!shutdownPending) {

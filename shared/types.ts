@@ -43,6 +43,7 @@ export interface Entry {
   turn?: string;
 }
 export interface Thread {
+  readState?: { revision: string; firstUnread?: string };
   id: string;
   projectId: string;
   title: string;
@@ -137,6 +138,9 @@ export interface TextDocument {
   revision: string;
 }
 export type DesktopEvent =
+  | { type: 'question'; question: UserQuestion }
+  | { type: 'question-closed'; id: string }
+  | { type: 'files-changed'; id: string }
   | { type: 'account'; status: Wire }
   | { type: 'state'; state: State }
   | { type: 'permission'; permission: Permission }
@@ -146,8 +150,20 @@ export type DesktopEvent =
   | { type: 'focus-chat'; id: string }
   | { type: 'attention'; id: string; kind: 'complete' | 'failure' };
 export interface DesktopAPI {
+  filePath(file: File): string;
   call<T = any>(method: string, args?: Wire): Promise<T>;
   onEvent(callback: (event: DesktopEvent) => void): () => void;
+}
+export interface UserQuestion {
+  toolCallId?: string;
+  id: string;
+  threadId: string;
+  mode: 'default' | 'plan';
+  questions: Array<{
+    question: string;
+    multiSelect?: boolean;
+    options: Array<{ label: string; description?: string; preview?: string }>;
+  }>;
 }
 declare global {
   interface Window {

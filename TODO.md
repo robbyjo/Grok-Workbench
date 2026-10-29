@@ -4,6 +4,8 @@ Windows local coding workflows come first. The detailed capability/evidence matr
 
 ## Delivered foundation
 
+- [x] 0.8.4: structured native Grok questions with session-bound answers/cancellation; automatic file/editor/Git refresh and conflict comparison; per-turn reported-edit review; persistent revision-checked unread results; screenshot paste and OS-backed file drops. Scope and evidence limits: [release notes](docs/RELEASE-0.8.4.md).
+
 - [x] Projects, persistent chats, naming/pinning/archive and restore.
 - [x] ACP streams, tool activity, plans, runtime configuration and approval/trust UI.
 - [x] Cancellation, process cleanup, session-load fixtures and restart recovery.

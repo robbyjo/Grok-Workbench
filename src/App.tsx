@@ -68,6 +68,9 @@ import AccountControl from './AccountControl';
 import MediaStudio, { MediaPreview } from './MediaStudio';
 import { defaultShortcuts, matchesShortcut } from '../shared/shortcuts';
 import { useAccessibleDialogs } from './accessibility';
+import UserQuestions from './UserQuestions';
+import TurnReview from './TurnReview';
+import type { UserQuestion } from '../shared/types';
 const TerminalPanel = lazy(() => import('./Terminal'));
 
 const initial: State = { version: 1, projects: [], threads: [], settings: { executable: 'grok' } };
@@ -223,6 +226,7 @@ export default function App() {
   const [attached, setAttached] = useState<Record<string, Wire[]>>({});
   const [pending, setPending] = useState<Record<string, boolean>>({});
   const [permissions, setPermissions] = useState<Permission[]>([]);
+  const [questions, setQuestions] = useState<UserQuestion[]>([]);
   const [inspector, setInspector] = useState(true);
   const [tab, setTab] = useState<'files' | 'changes'>('changes');
   const [fileDrafts, setFileDrafts] = useState<Record<string, FileDraft>>({});
@@ -271,6 +275,13 @@ export default function App() {
       return;
     }
     const unsubscribe = window.desktop.onEvent((event) => {
+      if (event.type === 'question')
+        setQuestions((items) => [
+          ...items.filter((q) => q.id !== event.question.id),
+          event.question,
+        ]);
+      if (event.type === 'question-closed')
+        setQuestions((items) => items.filter((q) => q.id !== event.id));
       if (event.type === 'state') setState(event.state);
       if (event.type === 'focus-chat') {
         setHistoryPage(undefined);
@@ -302,6 +313,10 @@ export default function App() {
     void window.desktop
       .call<Permission[]>('permissions')
       .then(setPermissions)
+      .catch(() => {});
+    void window.desktop
+      .call<UserQuestion[]>('questions')
+      .then(setQuestions)
       .catch(() => {});
     void window.desktop
       .call('drafts:get')
@@ -445,6 +460,21 @@ export default function App() {
   useEffect(() => {
     void refresh();
   }, [activeId, thread?.id, thread?.cwd, tab]);
+  useEffect(() => {
+    if (!thread) return;
+    void window.desktop.call('files:watch', { id: thread.id }).catch((e) => setError(String(e)));
+    const reconcile = () => {
+      void refresh();
+    };
+    const off = window.desktop.onEvent((e) => {
+      if (e.type === 'files-changed' && e.id === thread.id) reconcile();
+    });
+    window.addEventListener('focus', reconcile);
+    return () => {
+      off();
+      window.removeEventListener('focus', reconcile);
+    };
+  }, [thread?.id, thread?.cwd, tab]);
   useEffect(() => {
     void window.desktop
       ?.call('editor:dirty', {
@@ -695,7 +725,17 @@ export default function App() {
                     : ''}
                 </small>
               </span>
+              {item.readState?.firstUnread && (
+                <span className="unread-badge" aria-label="Unread result">
+                  ●
+                </span>
+              )}
               {item.pinned && <Pin size={12} />}
+              {questions.some((q) => q.threadId === item.id) && (
+                <span className="approval-badge" aria-label="Question pending">
+                  ?
+                </span>
+              )}
               {permissions.some((value) => value.threadId === item.id) && (
                 <span className="approval-badge">!</span>
               )}
@@ -819,6 +859,38 @@ export default function App() {
               <div className="workflow-toolbar">
                 <UsageIndicators thread={thread} />
                 <button onClick={() => setTasks(true)}>Tasks and queue</button>
+                <button
+                  onClick={() =>
+                    void action('thread:read-state', {
+                      id: thread.id,
+                      revision: thread.readState?.revision,
+                      unread: !thread.readState?.firstUnread,
+                    })
+                  }
+                >
+                  {thread.readState?.firstUnread ? 'Mark read' : 'Mark unread'}
+                </button>
+                {thread.readState?.firstUnread &&
+                  thread.readState.firstUnread !== 'threadStart' && (
+                    <button
+                      onClick={() =>
+                        setSearchHit({
+                          threadId: thread.id,
+                          entryId: thread.readState!.firstUnread,
+                          title: thread.title,
+                          projectName: project?.name ?? '',
+                          archived: thread.archived,
+                          hidden: false,
+                          kind: 'notice',
+                          before: '',
+                          match: '',
+                          after: '',
+                        })
+                      }
+                    >
+                      First unread result
+                    </button>
+                  )}
                 <button onClick={() => void action('history:export', { id: thread.id })}>
                   Export chat
                 </button>
@@ -947,6 +1019,12 @@ export default function App() {
                     }
                   >
                     <Activity entry={entry} />
+                    {thread &&
+                      entry.turn &&
+                      entry.type === 'notice' &&
+                      ['Turn finished', 'Turn stopped', 'Turn failed'].includes(entry.text) && (
+                        <TurnReview id={thread.id} turn={entry.turn} />
+                      )}
                   </div>
                 ))}
               </div>
@@ -988,6 +1066,11 @@ export default function App() {
             </div>
             <div className="composer-area">
               {thread && <TaskWorkflow key={thread.id} thread={thread} select={setActiveId} />}
+              {questions
+                .filter((q) => q.threadId === thread?.id)
+                .map((q) => (
+                  <UserQuestions key={q.id} question={q} />
+                ))}
               {currentPermissions.map((permission) => (
                 <div className="permission-card" key={permission.id}>
                   <div className="permission-title">
@@ -1061,7 +1144,34 @@ export default function App() {
                   </button>
                 </div>
               ) : (
-                <div className="composer">
+                <div
+                  className="composer"
+                  onDragOver={(e) => {
+                    if (e.dataTransfer.types.includes('Files')) e.preventDefault();
+                  }}
+                  onDrop={async (e) => {
+                    e.preventDefault();
+                    if (busy) return;
+                    const files = Array.from(e.dataTransfer.files);
+                    if (!files.length) return;
+                    if (files.length + (attached[draftKey]?.length ?? 0) > 5) {
+                      setError('Attach up to five files per prompt.');
+                      return;
+                    }
+                    try {
+                      const key = draftKey;
+                      const items = await window.desktop.call('attachments:drop', {
+                        paths: files.map((f) => window.desktop.filePath(f)),
+                      });
+                      setAttached((value) => ({
+                        ...value,
+                        [key]: [...(value[key] ?? []), ...items].slice(0, 5),
+                      }));
+                    } catch (e) {
+                      setError(String(e));
+                    }
+                  }}
+                >
                   {(attached[draftKey] ?? []).length > 0 && (
                     <div className="attachments">
                       {attached[draftKey].map((item) => (
@@ -1087,6 +1197,28 @@ export default function App() {
                   <textarea
                     ref={composer}
                     aria-label="Message Grok"
+                    onPaste={async (e) => {
+                      if (
+                        !Array.from(e.clipboardData.items).some((i) => i.type.startsWith('image/'))
+                      )
+                        return;
+                      e.preventDefault();
+                      if (busy) return;
+                      if ((attached[draftKey]?.length ?? 0) >= 5) {
+                        setError('Attach up to five files per prompt.');
+                        return;
+                      }
+                      try {
+                        const key = draftKey;
+                        const items = await window.desktop.call('attachments:paste');
+                        setAttached((value) => ({
+                          ...value,
+                          [key]: [...(value[key] ?? []), ...items].slice(0, 5),
+                        }));
+                      } catch (e) {
+                        setError(String(e));
+                      }
+                    }}
                     placeholder={
                       project
                         ? 'Ask Grok to build, explore, or fix something…'

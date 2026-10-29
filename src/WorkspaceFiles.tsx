@@ -24,6 +24,13 @@ export default function WorkspaceFiles({
     [searching, setSearching] = useState(false),
     [location, setLocation] = useState<Wire>();
   const generation = useRef(0);
+  useEffect(
+    () =>
+      window.desktop.onEvent((e) => {
+        if (e.type === 'files-changed' && e.id === thread.id) setRevision((v) => v + 1);
+      }),
+    [thread.id],
+  );
   const [newPath, setNewPath] = useState(''),
     [newFolder, setNewFolder] = useState(false),
     [revision, setRevision] = useState(0);

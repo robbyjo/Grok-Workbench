@@ -202,6 +202,7 @@ export class Sessions {
     if (mode !== 'files_only') {
       this.agents.disconnect(id);
       thread.entries = [];
+      thread.readState = { revision: randomUUID() };
       this.store.flush();
       await this.agents.connect(id);
     }

@@ -48,9 +48,22 @@ export default function FileEditor({
     [working, setWorking] = useState(false),
     [reload, setReload] = useState(false);
   const current = useRef(draft);
+  const [conflict, setConflict] = useState<TextDocument>();
   current.current = draft;
   const updateCurrent = useRef(update);
   updateCurrent.current = update;
+  const [diskRevision, setDiskRevision] = useState(0);
+  useEffect(() => {
+    const reconcile = () => setDiskRevision((v) => v + 1);
+    const off = window.desktop.onEvent((e) => {
+      if (e.type === 'files-changed' && e.id === id) reconcile();
+    });
+    window.addEventListener('focus', reconcile);
+    return () => {
+      off();
+      window.removeEventListener('focus', reconcile);
+    };
+  }, [id]);
   useEffect(() => {
     let active = true;
     void window.desktop
@@ -58,12 +71,20 @@ export default function FileEditor({
       .then((document) => {
         if (!active) return;
         const value = current.current;
-        if (value?.text === document.text)
+        if (value?.text === document.text) {
+          setConflict(undefined);
+          setError('');
           updateCurrent.current({ ...document, savedText: document.text });
-        else if (value && value.text !== value.savedText) {
-          if (value.revision !== document.revision)
+        } else if (value && value.text !== value.savedText) {
+          if (value.revision !== document.revision) {
+            setConflict(document);
             setError('File changed on disk. Your draft was kept; reload before saving.');
-        } else updateCurrent.current({ ...document, savedText: document.text });
+          }
+        } else {
+          setConflict(undefined);
+          setError('');
+          updateCurrent.current({ ...document, savedText: document.text });
+        }
       })
       .catch((failure) => {
         if (active) setError((failure as Error).message);
@@ -71,7 +92,7 @@ export default function FileEditor({
     return () => {
       active = false;
     };
-  }, [id, path]);
+  }, [id, path, diskRevision]);
   const dirty = Boolean(draft && draft.text !== draft.savedText);
   async function save() {
     if (!draft || !dirty || working || busy) return;
@@ -103,6 +124,8 @@ export default function FileEditor({
       const document = await window.desktop.call<TextDocument>('files:open', { id, path });
       updateCurrent.current({ ...document, savedText: document.text });
       setReload(false);
+      setConflict(undefined);
+      setError('');
     } catch (failure) {
       setError((failure as Error).message);
     } finally {
@@ -155,6 +178,17 @@ export default function FileEditor({
         <div className="panel-error" role="alert">
           {error}
         </div>
+      )}
+      {draft && conflict && (
+        <details className="disk-comparison">
+          <summary>Compare disk change with draft</summary>
+          <strong>Last saved version</strong>
+          <pre>{draft.savedText}</pre>
+          <strong>Current disk version</strong>
+          <pre>{conflict.text}</pre>
+          <strong>Your preserved draft</strong>
+          <pre>{draft.text}</pre>
+        </details>
       )}
       {draft && !plain && (
         <Suspense fallback={<p role="status">Loading code editor…</p>}>

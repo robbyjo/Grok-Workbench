@@ -15,6 +15,25 @@ import { History, HISTORY_TAIL } from './history';
 import { Worker } from 'node:worker_threads';
 
 export class Store {
+  completeResult(id: string, entryId: string) {
+    const thread = this.thread(id);
+    thread.readState = {
+      revision: randomUUID(),
+      firstUnread: thread.readState?.firstUnread ?? entryId,
+    };
+  }
+  markRead(id: string, revision: unknown, unread = false) {
+    const thread = this.thread(id);
+    if (typeof revision !== 'string' || thread.readState?.revision !== revision)
+      throw new Error('Read state changed. Review the latest result before marking it read.');
+    thread.readState = {
+      revision: randomUUID(),
+      ...(unread ? { firstUnread: 'threadStart' } : {}),
+    };
+    this.flush();
+    this.touch();
+    return thread.readState;
+  }
   state: State;
   private timer?: NodeJS.Timeout;
   readonly history: History;
@@ -84,6 +103,7 @@ export class Store {
       this.history.budget(this.state.settings.storageMiB ?? 512);
     }
     for (const thread of this.state.threads) {
+      thread.readState ??= { revision: randomUUID() };
       if (['running', 'approval', 'connecting'].includes(thread.status))
         thread.status = 'interrupted';
       for (const row of thread.queue ?? []) row.state = 'paused';
@@ -506,6 +526,7 @@ export class Store {
   create(projectId: string, cwd: string): Thread {
     const now = new Date().toISOString();
     const thread: Thread = {
+      readState: { revision: randomUUID() },
       id: randomUUID(),
       projectId,
       cwd,

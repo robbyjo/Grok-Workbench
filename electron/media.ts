@@ -98,6 +98,27 @@ export class Media {
       throw new Error('Choose a file up to 50 MiB.');
     return this.add(readFileSync(path), basename(path), 'attachment');
   }
+  attachMany(paths: string[]) {
+    if (!paths.length || paths.length > 5) throw new Error('Choose up to five files.');
+    const bytes = paths.map((path) => {
+      const info = statSync(path);
+      if (!info.isFile() || info.size > 50 * 1024 * 1024)
+        throw new Error('Choose a file up to 50 MiB.');
+      const data = readFileSync(path);
+      if (!data.length || data.length > 50 * 1024 * 1024)
+        throw new Error('Each attachment must be 1 byte–50 MiB.');
+      return data;
+    });
+    this.capacity(bytes.reduce((n, data) => n + data.length, 0));
+    const added: ReturnType<Media['add']>[] = [];
+    try {
+      paths.forEach((path, i) => added.push(this.add(bytes[i], basename(path), 'attachment')));
+      return added;
+    } catch (error) {
+      for (const asset of added) this.delete(asset.id);
+      throw error;
+    }
+  }
   attachment(id: string): Attachment {
     const row = this.rows.find((r) => r.id === id);
     if (!row) throw new Error('Attachment is no longer stored.');
