@@ -201,12 +201,10 @@ test('rich editor runs real local diagnostics/completion/navigation, saves keybo
       }))
       .catch((e) => ({ diagnosticError: String(e) }));
     const saves = await app.evaluate(() => (globalThis as any).editorSaveRequests).catch(() => []);
-    await test
-      .info()
-      .attach('editor-save-state', {
-        body: JSON.stringify({ renderer, saves }, null, 2),
-        contentType: 'application/json',
-      });
+    await test.info().attach('editor-save-state', {
+      body: JSON.stringify({ renderer, saves }, null, 2),
+      contentType: 'application/json',
+    });
     await page.screenshot({ path: '.test-data/rich-editor-failure.png' }).catch(() => {});
     throw error;
   } finally {
