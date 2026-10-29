@@ -1,5 +1,7 @@
 # Coding editor
 
+Version 0.8.4 refreshes saved files when the workspace watcher reports changes or the window regains focus. Dirty drafts stay intact and offer a comparison with the current disk version. Keyboard saves take the current editor text directly, without waiting for React's draft echo; disk-read replies started before or during a save/reload cannot replace the resulting saved buffer. A delayed-focus-read regression covers that ordering in source and packaged acceptance.
+
 Files now opens a lazy-loaded Monaco editor with line numbers, find/replace, completion, go-to-definition, local diagnostics and a visible cursor position. Ctrl+S uses Workbench’s existing UTF-8/BOM/CRLF and stale-content save checks. Unsaved drafts continue to survive file/chat navigation and application recovery. **Use plain text editor** retains the lighter text editor and syntax overlay; the choice is remembered in this profile.
 
 TypeScript, JavaScript, JSON, HTML and CSS services run in bundled local workers. Other recognized languages have syntax support; full project language-server integration is future work. TypeScript uses a standalone ESNext configuration, not your complete `tsconfig.json`, installed dependency type graph or build pipeline. JavaScript completion/navigation is available; semantic diagnostics depend on its language-service defaults. Project tests/builds remain the authoritative validation.

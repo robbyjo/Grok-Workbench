@@ -48,10 +48,20 @@ export default function FileEditor({
     [working, setWorking] = useState(false),
     [reload, setReload] = useState(false);
   const current = useRef(draft);
+  const lastRendered = useRef(draft);
   const [conflict, setConflict] = useState<TextDocument>();
-  current.current = draft;
+  if (lastRendered.current !== draft) {
+    current.current = draft;
+    lastRendered.current = draft;
+  }
   const updateCurrent = useRef(update);
   updateCurrent.current = update;
+  const operating = useRef(false);
+  const diskEpoch = useRef(0);
+  function publish(value: FileDraft) {
+    current.current = value;
+    updateCurrent.current(value);
+  }
   const [diskRevision, setDiskRevision] = useState(0);
   useEffect(() => {
     const reconcile = () => setDiskRevision((v) => v + 1);
@@ -66,15 +76,16 @@ export default function FileEditor({
   }, [id]);
   useEffect(() => {
     let active = true;
+    const epoch = diskEpoch.current;
     void window.desktop
       .call<TextDocument>('files:open', { id, path })
       .then((document) => {
-        if (!active) return;
+        if (!active || epoch !== diskEpoch.current) return;
         const value = current.current;
         if (value?.text === document.text) {
           setConflict(undefined);
           setError('');
-          updateCurrent.current({ ...document, savedText: document.text });
+          publish({ ...document, savedText: document.text });
         } else if (value && value.text !== value.savedText) {
           if (value.revision !== document.revision) {
             setConflict(document);
@@ -83,30 +94,39 @@ export default function FileEditor({
         } else {
           setConflict(undefined);
           setError('');
-          updateCurrent.current({ ...document, savedText: document.text });
+          publish({ ...document, savedText: document.text });
         }
       })
       .catch((failure) => {
-        if (active) setError((failure as Error).message);
+        if (active && epoch === diskEpoch.current) setError((failure as Error).message);
       });
     return () => {
       active = false;
     };
   }, [id, path, diskRevision]);
   const dirty = Boolean(draft && draft.text !== draft.savedText);
-  async function save() {
-    if (!draft || !dirty || working || busy) return;
+  async function save(editorText?: string) {
+    const snapshot = current.current;
+    if (!snapshot || operating.current || busy) return;
+    const text = snapshot.savedText.includes('\r\n')
+      ? (editorText ?? snapshot.text).replace(/\r?\n/g, '\r\n')
+      : (editorText ?? snapshot.text);
+    if (text === snapshot.savedText) return;
+    // Keyboard save reads the editor directly, before React has to render its echo.
+    publish({ ...snapshot, text });
+    operating.current = true;
+    diskEpoch.current++;
     setWorking(true);
     setError('');
     try {
       const saved = await window.desktop.call<TextDocument>('files:save', {
         id,
         path,
-        text: draft.text,
-        revision: draft.revision,
+        text,
+        revision: snapshot.revision,
       });
       // Preserve any typing that happened while the save was in flight.
-      updateCurrent.current({
+      publish({
         ...saved,
         text: current.current?.text ?? saved.text,
         savedText: saved.text,
@@ -114,28 +134,36 @@ export default function FileEditor({
     } catch (failure) {
       setError((failure as Error).message);
     } finally {
+      diskEpoch.current++;
+      operating.current = false;
       setWorking(false);
     }
   }
   async function reloadFile() {
+    if (operating.current) return;
+    operating.current = true;
+    diskEpoch.current++;
     setWorking(true);
     setError('');
     try {
       const document = await window.desktop.call<TextDocument>('files:open', { id, path });
-      updateCurrent.current({ ...document, savedText: document.text });
+      publish({ ...document, savedText: document.text });
       setReload(false);
       setConflict(undefined);
       setError('');
     } catch (failure) {
       setError((failure as Error).message);
     } finally {
+      diskEpoch.current++;
+      operating.current = false;
       setWorking(false);
     }
   }
   const change = (text: string) => {
-    if (!draft) return;
-    if (draft.savedText.includes('\r\n')) text = text.replace(/\r?\n/g, '\r\n');
-    update({ ...draft, text });
+    const snapshot = current.current;
+    if (!snapshot) return;
+    if (snapshot.savedText.includes('\r\n')) text = text.replace(/\r?\n/g, '\r\n');
+    publish({ ...snapshot, text });
   };
   return (
     <div className="file-editor">
@@ -197,7 +225,7 @@ export default function FileEditor({
             path={path}
             text={draft.text}
             change={change}
-            save={() => void save()}
+            save={(text) => void save(text)}
             location={location}
             navigate={navigate}
           />
@@ -226,7 +254,7 @@ export default function FileEditor({
             onKeyDown={(event) => {
               if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
                 event.preventDefault();
-                void save();
+                void save(event.currentTarget.value);
               }
               if (
                 event.key === 'Tab' &&

@@ -61,7 +61,7 @@ export default function CodeEditor({
   path: string;
   text: string;
   change: (text: string) => void;
-  save: () => void;
+  save: (text: string) => void;
   location?: { line?: number; column?: number };
   navigate: (path: string, location?: { line?: number; column?: number }) => void;
 }) {
@@ -130,7 +130,9 @@ export default function CodeEditor({
         return true;
       },
     });
-    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => callbacks.current.save());
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () =>
+      callbacks.current.save(model.getValue()),
+    );
     let alive = true;
     let generation = 0;
     function loadContext() {

@@ -49,16 +49,34 @@ test('rich editor runs real local diagnostics/completion/navigation, saves keybo
   try {
     const page = await app.firstWindow();
     // Delay only restoration replies, keeping real file/worker operations intact.
-    await app.evaluate(({ ipcMain }) => {
+    await app.evaluate(({ ipcMain, BrowserWindow }) => {
       const handlers = (ipcMain as any)._invokeHandlers as Map<string, Function>,
         original = handlers.get('desktop:call')!;
       (globalThis as any).restoredTabReplies = 0;
+      const web = BrowserWindow.getAllWindows()[0].webContents;
+      const send = web.send.bind(web);
+      web.send = ((channel: string, event: any, ...args: any[]) => {
+        if (
+          channel === 'desktop:event' &&
+          event?.type === 'files-changed' &&
+          (globalThis as any).holdWatchNotifications
+        )
+          return;
+        return send(channel, event, ...args);
+      }) as any;
       ipcMain.removeHandler('desktop:call');
       ipcMain.handle('desktop:call', async (event, method, args) => {
         const value = await original(event, method, args);
         if (method === 'files:tabs' && args.paths === undefined) {
           await new Promise((done) => setTimeout(done, 2000));
           (globalThis as any).restoredTabReplies++;
+        }
+        if (method === 'files:open' && (globalThis as any).holdNextEditorRead) {
+          (globalThis as any).holdNextEditorRead = false;
+          (globalThis as any).heldEditorRead = true;
+          await new Promise((done) => {
+            (globalThis as any).releaseEditorRead = done;
+          });
         }
         return value;
       });
@@ -104,6 +122,29 @@ test('rich editor runs real local diagnostics/completion/navigation, saves keybo
     await expect
       .poll(() => readFile(join(project, 'example.ts'), 'utf8'))
       .toBe('const result: number = 42;\n');
+    // A focus read captured before a save must not replace the newly saved model.
+    // Delay notification delivery only here to keep a later watcher refresh from
+    // concealing the stale reply. Real file reads, keyboard input and saves remain intact.
+    await app.evaluate(() => {
+      (globalThis as any).holdWatchNotifications = true;
+      (globalThis as any).holdNextEditorRead = true;
+    });
+    await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+    await expect.poll(() => app.evaluate(() => (globalThis as any).heldEditorRead)).toBe(true);
+    await input.focus();
+    await input.press('Control+a');
+    await page.keyboard.insertText('const immediate = 84;\n');
+    await input.press('Control+s');
+    await expect
+      .poll(() => readFile(join(project, 'example.ts'), 'utf8'))
+      .toBe('const immediate = 84;\n');
+    await app.evaluate(() => (globalThis as any).releaseEditorRead());
+    // Let the explicitly held IPC reply reach React before checking the retained buffer.
+    await page.waitForTimeout(250);
+    await expect(page.locator('.monaco-editor .view-lines')).toContainText('const immediate = 84;');
+    await app.evaluate(() => {
+      (globalThis as any).holdWatchNotifications = false;
+    });
     await page.getByRole('button', { name: 'Replace', exact: true }).click();
     await expect(page.locator('.find-widget')).toBeVisible();
     await input.press('Escape');
