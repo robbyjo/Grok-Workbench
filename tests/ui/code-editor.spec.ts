@@ -53,6 +53,7 @@ test('rich editor runs real local diagnostics/completion/navigation, saves keybo
       const handlers = (ipcMain as any)._invokeHandlers as Map<string, Function>,
         original = handlers.get('desktop:call')!;
       (globalThis as any).restoredTabReplies = 0;
+      (globalThis as any).editorSaveRequests = [];
       const web = BrowserWindow.getAllWindows()[0].webContents;
       const send = web.send.bind(web);
       web.send = ((channel: string, event: any, ...args: any[]) => {
@@ -66,6 +67,12 @@ test('rich editor runs real local diagnostics/completion/navigation, saves keybo
       }) as any;
       ipcMain.removeHandler('desktop:call');
       ipcMain.handle('desktop:call', async (event, method, args) => {
+        if (method === 'files:save')
+          (globalThis as any).editorSaveRequests.push({
+            path: args.path,
+            text: args.text,
+            revision: args.revision,
+          });
         const value = await original(event, method, args);
         if (method === 'files:tabs' && args.paths === undefined) {
           await new Promise((done) => setTimeout(done, 2000));
@@ -82,6 +89,21 @@ test('rich editor runs real local diagnostics/completion/navigation, saves keybo
       });
     });
     const errors: string[] = [];
+    await page.evaluate(() => {
+      (window as any).editorKeyboardSaves = [];
+      document.addEventListener(
+        'keydown',
+        (e) => {
+          if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's')
+            (window as any).editorKeyboardSaves.push({
+              text: document.querySelector('.monaco-editor .view-lines')?.textContent,
+              active: document.activeElement?.getAttribute('aria-label'),
+              input: (document.activeElement as HTMLTextAreaElement)?.value,
+            });
+        },
+        true,
+      );
+    });
     page.on('pageerror', (e) => errors.push(e.message));
     await page.getByRole('button', { name: 'Files', exact: true }).click();
     await page.getByRole('button', { name: 'example.ts', exact: true }).click();
@@ -165,6 +187,28 @@ test('rich editor runs real local diagnostics/completion/navigation, saves keybo
       .toBe(false);
     await page.screenshot({ path: '.test-data/rich-editor.png' });
     expect(errors).toEqual([]);
+  } catch (error) {
+    const page = await app.firstWindow();
+    const renderer = await page
+      .evaluate(async () => ({
+        saves: (window as any).editorKeyboardSaves,
+        lines: document.querySelector('.monaco-editor .view-lines')?.textContent,
+        active: document.activeElement?.getAttribute('aria-label'),
+        errors: Array.from(document.querySelectorAll('.file-editor .panel-error')).map(
+          (e) => e.textContent,
+        ),
+        drafts: await window.desktop.call('drafts:get'),
+      }))
+      .catch((e) => ({ diagnosticError: String(e) }));
+    const saves = await app.evaluate(() => (globalThis as any).editorSaveRequests).catch(() => []);
+    await test
+      .info()
+      .attach('editor-save-state', {
+        body: JSON.stringify({ renderer, saves }, null, 2),
+        contentType: 'application/json',
+      });
+    await page.screenshot({ path: '.test-data/rich-editor-failure.png' }).catch(() => {});
+    throw error;
   } finally {
     // A failed editing assertion may leave a draft. Discard only this fixture's
     // drafts so the native quit prompt does not mask the original failure.
