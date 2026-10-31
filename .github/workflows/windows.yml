@@ -3,7 +3,7 @@ name: Windows portable
 on:
   push:
     branches: [main]
-    paths-ignore: [README.md, TODO.md, 'docs/**']
+    paths-ignore: [README.md, TODO.md, 'docs/**', 'website/**', '.github/workflows/website.yml']
   pull_request:
   workflow_dispatch:
 

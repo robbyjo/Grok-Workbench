@@ -4,6 +4,8 @@ A Windows-first desktop application with **Grok Build built in**, supporting Gro
 
 **0.8.4 alpha · Windows 10/11 x64 · portable executable.** macOS, Linux and ARM64 are future targets. See [TODO.md](TODO.md), the [parity audit](docs/PARITY.md), and [validation evidence](docs/VALIDATION.md).
 
+[Project website and quick-start tutorial](https://robbyjo.github.io/Grok-Workbench/) · [Website source and hosting instructions](docs/WEBSITE.md)
+
 [Download the Windows portable executable](https://github.com/robbyjo/Grok-Workbench/releases/download/v0.8.4/Grok-Workbench-0.8.4-Portable.exe) · [SHA-256 checksum](https://github.com/robbyjo/Grok-Workbench/releases/download/v0.8.4/Grok-Workbench-0.8.4-Portable.exe.sha256) · [Release notes](https://github.com/robbyjo/Grok-Workbench/releases/tag/v0.8.4)
 
 **New in 0.8.4:** structured Grok questions, automatic editor/file/Git refresh with draft comparison, per-turn reported-edit review, persistent unread results, and screenshot paste/file drops. See [0.8.4 changes and limits](docs/RELEASE-0.8.4.md).

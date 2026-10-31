@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f7f8f2" />
+    <meta
+      name="description"
+      content="Grok Workbench is an independent Windows desktop app for Grok Build. Bring your projects, chats, files, Git changes and terminals into one workspace."
+    />
+    <title>Grok Workbench — Your local coding workspace</title>
+    <link rel="icon" href="assets/mark.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header wrap">
+      <a class="wordmark" href="#" aria-label="Grok Workbench home"
+        ><img src="assets/mark.svg" width="28" height="32" alt="" />Grok <span>Workbench</span></a
+      >
+      <nav aria-label="Main navigation">
+        <a href="#workspace">The workspace</a>
+        <a href="#getting-started">Quick start</a>
+        <a class="repo-link" href="https://github.com/robbyjo/Grok-Workbench"
+          >GitHub <span aria-hidden="true">↗</span></a
+        >
+      </nav>
+    </header>
+
+    <main id="main">
+      <section class="hero wrap" aria-labelledby="hero-title">
+        <p class="eyebrow">
+          <span class="status-dot" aria-hidden="true"></span> WINDOWS DESKTOP · OPEN SOURCE · 0.8.4
+          ALPHA
+        </p>
+        <h1 id="hero-title">Your project.<br />Grok, alongside.</h1>
+        <p class="hero-description">
+          A local coding workspace with Grok Build built in.<br class="desktop-break" />
+          Chat, edit files, review changes, and run your tools in one place.
+        </p>
+        <div class="hero-actions">
+          <a
+            class="button primary"
+            href="https://github.com/robbyjo/Grok-Workbench/releases/download/v0.8.4/Grok-Workbench-0.8.4-Portable.exe"
+            ><svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.7"
+              aria-hidden="true"
+            >
+              <path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5" /></svg
+            >Download for Windows</a
+          >
+          <a class="text-link" href="#getting-started"
+            >Start here <span aria-hidden="true">↓</span></a
+          >
+        </div>
+        <p class="download-note">
+          Windows 10/11 x64 · Portable executable · Unsigned alpha<br /><a
+            href="https://github.com/robbyjo/Grok-Workbench/releases/tag/v0.8.4"
+            >Release notes</a
+          ><span aria-hidden="true"> / </span
+          ><a
+            href="https://github.com/robbyjo/Grok-Workbench/releases/download/v0.8.4/Grok-Workbench-0.8.4-Portable.exe.sha256"
+            >SHA-256 checksum</a
+          >
+        </p>
+      </section>
+
+      <section class="workspace wrap" id="workspace" aria-labelledby="workspace-title">
+        <div class="section-intro">
+          <p class="eyebrow">A PLACE TO BUILD</p>
+          <h2 id="workspace-title">Keep the work in view.</h2>
+          <p>Your conversation and your code, side by side.</p>
+        </div>
+        <figure class="app-preview">
+          <a
+            href="assets/workbench-screenshot.png"
+            aria-label="Open full-size Grok Workbench screenshot"
+            ><img
+              class="app-screenshot"
+              src="assets/workbench-screenshot.png"
+              alt="Grok Workbench in dark mode, with projects and chats on the left, a chat composer in the center, and a Git diff on the right."
+              width="1783"
+              height="974"
+              fetchpriority="high"
+          /></a>
+          <figcaption>
+            <span>Grok Workbench 0.8.4 · Windows</span
+            ><span>Actual app screenshot with a local test project. Click to enlarge.</span>
+          </figcaption>
+        </figure>
+        <div class="features">
+          <article>
+            <span class="feature-number">01 / CONVERSATION</span>
+            <h3>Bring a project. Start a chat.</h3>
+            <p>
+              Organize projects and conversations, attach files or screenshots, and follow Grok’s
+              tool activity as it works.
+            </p>
+          </article>
+          <article>
+            <span class="feature-number">02 / CODE & CHANGES</span>
+            <h3>See what’s changing.</h3>
+            <p>
+              Edit files in the built-in Monaco editor. Inspect Git diffs, stage changes, and review
+              a commit before pushing.
+            </p>
+          </article>
+          <article>
+            <span class="feature-number">03 / YOUR WORKFLOW</span>
+            <h3>Use the tools you know.</h3>
+            <p>
+              Open terminal tabs, connect MCP servers, and work with Git worktrees. Grok’s native
+              engine is included.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="tutorial" id="getting-started" aria-labelledby="tutorial-title">
+        <div class="wrap tutorial-layout">
+          <div class="tutorial-intro">
+            <p class="eyebrow">QUICK START</p>
+            <h2 id="tutorial-title">From download<br />to your first task.</h2>
+            <p>No separate Grok CLI installation.<br />Just the app and a project to work on.</p>
+            <a class="text-link" href="https://github.com/robbyjo/Grok-Workbench#run-on-windows"
+              >Read the full guide <span aria-hidden="true">↗</span></a
+            >
+          </div>
+          <ol class="steps">
+            <li>
+              <h3>Download and open</h3>
+              <p>
+                Save <code>Grok-Workbench-0.8.4-Portable.exe</code> in a writable folder, then open
+                it. The alpha is currently unsigned.
+              </p>
+            </li>
+            <li>
+              <h3>Connect your Grok account</h3>
+              <p>
+                Click <strong>Sign in to Grok</strong> above Settings. Complete Grok OAuth sign-in
+                in your browser, or save an xAI API key in the app. Model requests need internet
+                access and account access/billing.
+              </p>
+            </li>
+            <li>
+              <h3>Open your project</h3>
+              <p>
+                Use the <strong>+</strong> beside Projects to choose a local folder, then start a
+                chat. Install Git and your project’s development tools for the workflows that need
+                them.
+              </p>
+            </li>
+            <li>
+              <h3>Try a small first task</h3>
+              <p>Send a prompt like this:</p>
+              <blockquote>
+                Explain how this project is organized and suggest one small improvement. Wait for me
+                before changing files.
+              </blockquote>
+              <p>
+                Respond to project-trust and tool-approval requests above the composer. Inspect any
+                edits in <strong>Changes</strong>; use <strong>Stop turn</strong> to cancel.
+              </p>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="notes wrap" aria-labelledby="notes-title">
+        <h2 id="notes-title">A few things to know</h2>
+        <div class="notes-grid">
+          <p>
+            <strong>Keep your workspace with you.</strong> Portable data lives in
+            <code>Grok Desktop Data</code> beside the executable. Move both together. Encrypted API
+            keys may need re-entry on another PC or Windows account.
+          </p>
+          <p>
+            <strong>Choose permissions thoughtfully.</strong> Agent tools run with your Windows
+            permissions. Approval choices control tool requests; Grok’s OS-level agent sandbox is
+            unavailable on Windows.
+            <a href="https://github.com/robbyjo/Grok-Workbench/blob/main/docs/WINDOWS-ISOLATION.md"
+              >About isolation <span aria-hidden="true">↗</span></a
+            >
+          </p>
+        </div>
+      </section>
+      <section class="closing">
+        <div class="wrap closing-inner">
+          <div>
+            <p class="eyebrow">READY WHEN YOU ARE</p>
+            <h2>What are we building?</h2>
+          </div>
+          <a class="button light" href="https://github.com/robbyjo/Grok-Workbench/releases/latest"
+            >Get Grok Workbench <span aria-hidden="true">↗</span></a
+          >
+        </div>
+      </section>
+    </main>
+
+    <footer class="wrap site-footer">
+      <div>
+        <a class="footer-brand" href="#">Grok Workbench</a>
+        <p>
+          An independent Apache-2.0 project. Not affiliated with xAI.<br />Windows-first alpha;
+          macOS, Linux, and ARM64 are future targets.
+        </p>
+      </div>
+      <nav aria-label="Project resources">
+        <a href="https://github.com/robbyjo/Grok-Workbench">Source code</a
+        ><a href="https://github.com/robbyjo/Grok-Workbench/issues">Report an issue</a
+        ><a href="https://github.com/robbyjo/Grok-Workbench/blob/main/docs/PRIVACY.md">Privacy</a
+        ><a href="https://github.com/robbyjo/Grok-Workbench/blob/main/LICENSE">License</a>
+      </nav>
+    </footer>
+  </body>
+</html>
