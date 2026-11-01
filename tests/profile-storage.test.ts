@@ -57,6 +57,46 @@ test('aggregate inventory counts nested profiles once; export/prune/restore pres
   assert.equal(await readFile(join(f.path, 'messages.json'), 'utf8'), 'original history');
   await assert.rejects(f.storage.restore(result.backup), /already exists/);
 });
+test(
+  'POSIX inventory ignores only Chromium singleton links at the desktop profile root',
+  { skip: process.platform === 'win32' },
+  async () => {
+    const f = await fixture();
+    await writeFile(join(f.exports, 'outside.txt'), 'external data must not be scanned');
+    await symlink('host-12345', join(f.desktop, 'SingletonLock'));
+    await symlink('123456', join(f.desktop, 'SingletonCookie'));
+    await symlink(f.exports, join(f.desktop, 'SingletonSocket'), 'dir');
+    const report = await f.storage.scan();
+    assert.equal(report.files, 3);
+    assert.equal(report.bytes, (await lstat(join(f.path, 'summary.json'))).size + 16 + 23);
+    await f.storage.assertCapacity(256);
+  },
+);
+test(
+  'POSIX singleton exceptions never apply to arbitrary, nested or native-session links',
+  { skip: process.platform === 'win32' },
+  async () => {
+    for (const location of ['other', 'nested', 'native', 'session']) {
+      const f = await fixture();
+      const parent =
+        location === 'nested'
+          ? join(f.desktop, 'nested')
+          : location === 'native'
+            ? f.home
+            : location === 'session'
+              ? f.path
+              : f.desktop;
+      await mkdir(parent, { recursive: true });
+      await symlink(
+        f.exports,
+        join(parent, location === 'other' ? 'arbitrary-link' : 'SingletonLock'),
+        'dir',
+      );
+      await assert.rejects(f.storage.scan(), /linked/);
+      if (location === 'session') await assert.rejects(f.storage.preview([f.id], 30), /linked/);
+    }
+  },
+);
 test('retention rejects active/unarchived owners, recent files, stale previews and exports inside profiles', async () => {
   const f = await fixture();
   f.threads[0].archived = false;

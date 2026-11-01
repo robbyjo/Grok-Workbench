@@ -42,7 +42,11 @@ const validRelative = (path: unknown): path is string =>
         !/[. ]$/.test(part),
     );
 type FileRow = { path: string; bytes: number; modified: number };
-async function inventory(root: string, retention = false): Promise<FileRow[]> {
+async function inventory(
+  root: string,
+  retention = false,
+  browserProfile?: string,
+): Promise<FileRow[]> {
   const rows: FileRow[] = [];
   let visited = 0;
   async function visit(path: string, depth: number) {
@@ -53,8 +57,20 @@ async function inventory(root: string, retention = false): Promise<FileRow[]> {
       throw e;
     });
     if (!info) return;
-    if (info.isSymbolicLink())
+    if (info.isSymbolicLink()) {
+      // Chromium's POSIX profile singleton entries are transient links, not data.
+      // Ignore only these exact desktop-root links; never traverse their targets.
+      if (
+        !retention &&
+        process.platform !== 'win32' &&
+        browserProfile &&
+        ['SingletonCookie', 'SingletonLock', 'SingletonSocket'].some((name) =>
+          samePath(path, join(browserProfile, name)),
+        )
+      )
+        return;
       throw new Error('Profile contains a linked folder/file; review it before managing storage.');
+    }
     if (info.isDirectory()) {
       for (const name of await readdir(path)) await visit(join(path, name), depth + 1);
     } else if (info.isFile()) {
@@ -114,7 +130,7 @@ export class ProfileStorage {
       let bytes = 0,
         files = 0;
       for (const root of roots)
-        for (const row of await inventory(root)) {
+        for (const row of await inventory(root, false, desktop)) {
           const path = join(root, row.path);
           const native = inside(home, path);
           const name = relative(native ? home : desktop, path).split(sep)[0];

@@ -41,7 +41,9 @@ export default function AccountControl({ state }: { state: State }) {
           <small>
             {api
               ? status?.saved
-                ? 'Remembered on this Windows account'
+                ? window.desktop.platform === 'win32'
+                  ? 'Remembered on this Windows account'
+                  : 'Remembered in this system keyring'
                 : 'Session / environment key'
               : status?.account?.signedIn
                 ? 'Saved OAuth sign-in'
