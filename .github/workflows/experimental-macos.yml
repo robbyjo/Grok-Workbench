@@ -68,8 +68,8 @@ jobs:
             native/studio-engine/target
             upstream/grok-build
           key: ${{ steps.native-cache.outputs.cache-primary-key }}
-      - name: Protocol and local native MCP regressions
-        run: npx tsx --test tests/agent.test.ts tests/mcp-compression.test.ts
+      - name: Protocol, profile safety and local native MCP regressions
+        run: npx tsx --test tests/agent.test.ts tests/profile-storage.test.ts tests/mcp-compression.test.ts
       - name: Package unsigned experimental app
         run: |
           npm run licenses
