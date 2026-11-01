@@ -1,9 +1,15 @@
-name: Publish tested portable
+name: Publish tested platform release
 on:
   workflow_dispatch:
     inputs:
       run_id:
         description: Successful Windows portable run ID for this exact main commit
+        required: true
+      linux_run_id:
+        description: Successful experimental Linux run for the exact same main commit
+        required: true
+      macos_run_id:
+        description: Successful macOS run for the exact same main commit (main or platform cache branch)
         required: true
       signed:
         description: Require the approved signed artifact (leave disabled until SignPath approval)
@@ -26,10 +32,12 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: '24'
-      - name: Publish only the exact tested CI artifact
+      - name: Publish only the exact tested CI artifacts from every platform
         env:
           GH_TOKEN: ${{ github.token }}
           GROK_RELEASE_RUN_ID: ${{ inputs.run_id }}
+          GROK_RELEASE_LINUX_RUN_ID: ${{ inputs.linux_run_id }}
+          GROK_RELEASE_MACOS_RUN_ID: ${{ inputs.macos_run_id }}
           GROK_RELEASE_SIGNED: ${{ inputs.signed }}
           GROK_RELEASE_HEAD: ${{ github.sha }}
           GROK_SIGNER_THUMBPRINT: ${{ vars.GROK_SIGNER_THUMBPRINT }}

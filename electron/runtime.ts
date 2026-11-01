@@ -23,7 +23,7 @@ export function embeddedEngine(): string {
     const value = JSON.parse(readFileSync(metadata, 'utf8'));
     if (
       value.bindingVersion !== '0.6.0' ||
-      value.platform !== 'win32-x64' ||
+      value.platform !== `${process.platform}-${process.arch}` ||
       value.revision !== '2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8' ||
       createHash('sha256').update(readFileSync(candidate)).digest('hex') !== value.sha256
     )
@@ -49,8 +49,8 @@ export function desktopDataDirectory(env: NodeJS.ProcessEnv, appData?: string): 
 export function bundledRuntime(): string {
   const resources = (process as NodeJS.Process & { resourcesPath?: string }).resourcesPath;
   return resources
-    ? join(resources, 'runtime', 'grok.exe')
-    : join(process.cwd(), '.runtime', 'grok.exe');
+    ? join(resources, 'runtime', process.platform === 'win32' ? 'grok.exe' : 'grok')
+    : join(process.cwd(), '.runtime', process.platform === 'win32' ? 'grok.exe' : 'grok');
 }
 
 export function runtimeExecutable(selected: string): string {

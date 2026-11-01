@@ -94,7 +94,9 @@ export class Terminals {
         'Terminal limit reached (six per chat, 32 total). Close a tab to release its stored scrollback.',
       );
     const profiles = this.shells(),
-      profile = profiles.find((p) => p.id === (shellId ?? row?.shell ?? profiles[0]?.id));
+      profile =
+        profiles.find((p) => p.id === (shellId ?? row?.shell ?? profiles[0]?.id)) ??
+        (shellId ? undefined : profiles[0]);
     if (!profile) throw new Error('Selected shell is unavailable.');
     row = {
       id,

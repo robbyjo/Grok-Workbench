@@ -1,0 +1,99 @@
+name: Experimental Linux builds
+on:
+  push:
+    branches: [main]
+    paths-ignore: [README.md, TODO.md, 'docs/**', 'website/**', '.github/workflows/website.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: experimental-linux-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  linux:
+    name: Ubuntu 24.04 x64 - experimental
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    env:
+      CARGO_BUILD_JOBS: '4'
+      ELECTRON_BUILDER_COMPRESSION_LEVEL: '5'
+      XAI_API_KEY: ''
+      GROK_CODE_XAI_API_KEY: ''
+      GROK_DEPLOYMENT_KEY: ''
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install native build and headless desktop dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends build-essential cmake clang pkg-config libssl-dev zlib1g-dev unzip libgtk-3-0t64 libnss3 libasound2t64 libgbm1 libsecret-1-0 libnotify4 xvfb xauth dbus-x11
+          npm ci
+          node node_modules/electron/install.js
+          rustup toolchain install 1.95.0 --profile minimal
+      - name: Build and typecheck app
+        run: npm run build
+      - name: Restore native compilation cache
+        id: native-cache
+        continue-on-error: true
+        timeout-minutes: 8
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            native/studio-engine/target
+            upstream/grok-build
+          key: experimental-${{ runner.os }}-${{ runner.arch }}-rust-1.95-${{ hashFiles('native/studio-engine/Cargo.*', 'native/studio-engine/build.rs', 'native/studio-engine/src/**', 'native/studio-engine/patches/**', 'scripts/engine-*.cjs', 'scripts/protoc.cjs') }}
+      - name: Build pinned native engine
+        run: npm run engine:build
+      - name: Preserve successful native compilation
+        if: steps.native-cache.outputs.cache-hit != 'true'
+        continue-on-error: true
+        timeout-minutes: 8
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            native/studio-engine/target
+            upstream/grok-build
+          key: ${{ steps.native-cache.outputs.cache-primary-key }}
+      - name: Protocol, provider, remote and profile safety acceptance
+        run: npx tsx --test tests/agent.test.ts tests/workspace.test.ts tests/workflow-improvements.test.ts tests/profile-storage.test.ts tests/credential-storage.test.ts tests/providers-preview.test.ts tests/provider-native.test.ts tests/background.test.ts tests/remote.test.ts tests/mcp-compression.test.ts
+      - name: Source desktop acceptance with Chromium sandbox enabled
+        run: node scripts/accept-linux-packages.cjs --source
+      - name: Package experimental Debian and archive
+        run: |
+          npm run licenses
+          node scripts/package-experimental.cjs
+      - name: Accept actual Debian and archive payloads
+        run: node scripts/accept-linux-packages.cjs
+      - name: Upload accepted Linux packages and provenance
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: Grok-Workbench-Linux-x64-${{ github.sha }}
+          path: |
+            release/*-EXPERIMENTAL.deb*
+            release/*-EXPERIMENTAL.tar.gz*
+            release/EXPERIMENTAL-PLATFORMS.txt
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 30
+      - name: Upload Linux acceptance records
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: Linux-validation-${{ github.sha }}
+          path: |
+            .test-data/platform-smoke-*/result.json
+            .test-data/platform-smoke-*/*.png
+            .test-data/linux-package-acceptance.json
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 7

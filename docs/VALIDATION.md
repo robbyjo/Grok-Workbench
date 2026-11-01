@@ -1,6 +1,23 @@
 # Validation record
 
-Current source version: **Grok Workbench 0.8.4**, with the Grok Rust library embedded instead of a packaged CLI. Validation was performed on Windows x64; dates below use America/New_York. Earlier sections retain historical version-specific names and results.
+Current source version: **Grok Workbench 0.8.5**, with the pinned Grok Rust library embedded instead of a packaged CLI. The merged release adds experimental Linux and UNTESTED macOS packages; dates below use America/New_York. Earlier sections retain historical version-specific names and results.
+
+## 0.8.5 merged release candidate (November 1)
+
+The platform and extended-workbench branches are combined. Local build/typechecks
+and **111 backend tests** pass, with five optional/platform-specific cases skipped.
+Production dependency audit reports zero advisories. New regressions cover Linux
+provider keyring refusal, portable credential fallback, same-source platform
+publication, Windows update selection among multi-platform assets, and waiting
+for all public website download links. Final CI and publication results are
+recorded after artifact acceptance. Every application package is rebuilt from
+the merged 0.8.5 source; unchanged native-engine compilation caches may be reused
+after Cargo revalidates the pinned source and dependency graph.
+
+Thirteen source GUI scenarios pass locally. The screenshot-paste scenario is
+blocked on this session's native clipboard: an independent Electron-only probe
+also writes an image but reads no supported clipboard types. Release still
+requires the complete source and packaged GUI suites on hosted Windows CI.
 
 ## Unreleased extended workbench (October 31)
 

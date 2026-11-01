@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths: ['website/**', '.github/workflows/website.yml']
   workflow_dispatch:
+  release:
+    types: [published]
 
 permissions:
   contents: read
@@ -14,7 +16,25 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  ready:
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.release.outputs.ready }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '24'
+      - name: Wait for advertised release downloads
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/website-release-ready.cjs
   deploy:
+    needs: ready
+    if: needs.ready.outputs.ready == 'true'
     runs-on: ubuntu-latest
     permissions:
       pages: write

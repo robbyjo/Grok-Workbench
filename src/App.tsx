@@ -812,7 +812,15 @@ export default function App() {
             <span className="status-dot idle" />
             <span>
               {t('Local machine')}
-              <small>{t('Windows · local workflows')}</small>
+              <small>
+                {t(
+                  window.desktop.platform === 'win32'
+                    ? 'Windows · local workflows'
+                    : window.desktop.platform === 'darwin'
+                      ? 'macOS · local workflows'
+                      : 'Linux · local workflows',
+                )}
+              </small>
             </span>
           </div>
           <AccountControl state={state} />
@@ -831,6 +839,15 @@ export default function App() {
         </div>
       </aside>
       <main className="workspace">
+        {window.desktop.platform !== 'win32' && (
+          <p className="experimental-platform" role="status">
+            Experimental{' '}
+            {window.desktop.platform === 'darwin'
+              ? 'macOS — UNTESTED: volunteer validation required'
+              : 'Linux'}{' '}
+            build · Manual updates only · Native pruning and Windows Sandbox unavailable.
+          </p>
+        )}
         <header className="topbar">
           <div className="breadcrumbs">
             <Folder size={15} />
@@ -1506,7 +1523,13 @@ export default function App() {
                 <ShieldCheck size={14} />
                 <span>
                   {t('Permissions apply.')}
-                  <small>{t('Windows OS sandbox unavailable.')}</small>
+                  <small>
+                    {t(
+                      window.desktop.platform === 'win32'
+                        ? 'Windows OS sandbox unavailable.'
+                        : 'Agent OS isolation unverified.',
+                    )}
+                  </small>
                 </span>
               </div>
             </aside>
@@ -1577,7 +1600,11 @@ export default function App() {
                           id="executable"
                           value={executable}
                           onChange={(event) => setExecutable(event.target.value)}
-                          placeholder="embedded, grok or C:\path\to\grok.exe"
+                          placeholder={
+                            window.desktop.platform === 'win32'
+                              ? 'embedded, grok or C:\\path\\to\\grok.exe'
+                              : 'embedded, grok or /path/to/grok'
+                          }
                         />
                         <button
                           onClick={async () => {
@@ -1589,7 +1616,7 @@ export default function App() {
                         </button>
                       </div>
                       <small>
-                        Use “embedded” for the built-in engine, “grok” on PATH, or select a Windows
+                        Use “embedded” for the built-in engine, “grok” on PATH, or select a local
                         executable.
                       </small>
                       <div className="runtime-help">
@@ -1690,8 +1717,10 @@ export default function App() {
                         <p>
                           Grok controls tool permissions and project trust. Choosing “don't ask
                           again for anything” enables always-approve for that chat until you turn
-                          approval prompts back on. Grok currently has no OS sandbox on Windows. The
-                          interactive terminal runs as your Windows user.
+                          approval prompts back on.{' '}
+                          {window.desktop.platform === 'win32'
+                            ? 'Grok currently has no OS sandbox on Windows. The interactive terminal runs as your Windows user.'
+                            : 'Agent OS isolation has not been validated on this experimental platform. The interactive terminal and project actions run with your current user permissions.'}
                         </p>
                       </div>
                     </>
@@ -1775,7 +1804,8 @@ export default function App() {
             />
             <div className="settings-footer">
               <small className="muted">
-                Grok Workbench {version} · Independent client · Windows first
+                Grok Workbench {version} · Independent client ·{' '}
+                {window.desktop.platform === 'win32' ? 'Windows first' : 'Experimental platform'}
               </small>
               <button onClick={() => closeSettings()}>{t('Done')}</button>
             </div>

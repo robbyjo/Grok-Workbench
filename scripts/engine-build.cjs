@@ -3,48 +3,12 @@ const fs = require('node:fs'),
   cp = require('node:child_process'),
   crypto = require('node:crypto');
 async function main() {
-  if (process.platform !== 'win32' || process.arch !== 'x64')
-    throw new Error('The current engine build targets Windows x64.');
+  const platform = `${process.platform}-${process.arch}`;
+  if (!['win32-x64', 'linux-x64', 'linux-arm64', 'darwin-x64', 'darwin-arm64'].includes(platform))
+    throw new Error(`Unsupported native engine target: ${platform}`);
   require('./engine-source.cjs');
   const env = { ...process.env };
-  if (!env.PROTOC) {
-    try {
-      cp.execFileSync('protoc', ['--version'], { stdio: 'ignore' });
-    } catch {
-      const folder = path.resolve('.runtime/protoc');
-      fs.mkdirSync(folder, { recursive: true });
-      const zip = path.join(folder, 'protoc.zip');
-      const response = await fetch(
-        'https://github.com/protocolbuffers/protobuf/releases/download/v34.1/protoc-34.1-win64.zip',
-        { signal: AbortSignal.timeout(180000) },
-      );
-      if (!response.ok)
-        throw new Error(
-          'Could not download the pinned protobuf compiler. Set PROTOC to an existing installation.',
-        );
-      const bytes = Buffer.from(await response.arrayBuffer());
-      if (
-        crypto.createHash('sha256').update(bytes).digest('hex') !==
-        '6d7ebdc75e9c1f0026d4fb28f17ef1d0aae77d36744d83a9e052d79ba493724f'
-      )
-        throw new Error('Pinned protobuf checksum mismatch.');
-      fs.writeFileSync(zip, bytes);
-      cp.execFileSync(
-        'powershell.exe',
-        [
-          '-NoProfile',
-          '-NonInteractive',
-          '-Command',
-          "$ErrorActionPreference='Stop'; $env:PSModulePath=Join-Path $env:SystemRoot 'System32/WindowsPowerShell/v1.0/Modules'; Expand-Archive -LiteralPath $env:GROK_STUDIO_PROTO_ZIP -DestinationPath $env:GROK_STUDIO_PROTO_DIR -Force",
-        ],
-        {
-          env: { ...env, GROK_STUDIO_PROTO_ZIP: zip, GROK_STUDIO_PROTO_DIR: folder },
-          stdio: 'inherit',
-        },
-      );
-      env.PROTOC = path.join(folder, 'bin/protoc.exe');
-    }
-  }
+  await require('./protoc.cjs').ensureProtoc(env);
   cp.execFileSync(
     'cargo',
     [
@@ -58,7 +22,13 @@ async function main() {
     { stdio: 'inherit', env },
   );
   fs.mkdirSync('.runtime', { recursive: true });
-  const source = 'native/studio-engine/target/release/grok_studio_engine.dll',
+  const library =
+    process.platform === 'win32'
+      ? 'grok_studio_engine.dll'
+      : process.platform === 'darwin'
+        ? 'libgrok_studio_engine.dylib'
+        : 'libgrok_studio_engine.so';
+  const source = path.join('native/studio-engine/target/release', library),
     destination = '.runtime/studio-engine.node';
   const sourceHash = crypto.createHash('sha256').update(fs.readFileSync(source)).digest('hex');
   if (
@@ -73,7 +43,7 @@ async function main() {
       {
         revision: '2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8',
         sha256,
-        platform: 'win32-x64',
+        platform,
         bindingVersion: '0.6.0',
       },
       null,
@@ -119,7 +89,7 @@ async function main() {
   }
   fs.writeFileSync('resources/engine/CARGO-LICENSES.txt', notices.join(''));
   fs.copyFileSync('.runtime/engine.json', 'resources/engine/engine.json');
-  require('./msvc-runtime.cjs')();
+  if (process.platform === 'win32') require('./msvc-runtime.cjs')();
   console.log('Built embedded Studio engine:', sha256);
 }
 main().catch((error) => {

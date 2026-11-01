@@ -102,7 +102,7 @@ export default function TerminalPanel({
   const [rows, setRows] = useState<Array<{ id: string; shell: string; exited: boolean }>>([]),
     [selected, setSelected] = useState<string>(''),
     [shells, setShells] = useState<Array<{ id: string; name: string }>>([]),
-    [shell, setShell] = useState('powershell'),
+    [shell, setShell] = useState(window.desktop.platform === 'win32' ? 'powershell' : 'default'),
     [review, setReview] = useState<string>();
   async function refresh() {
     const list = await window.desktop.call<any[]>('terminal:list', { id });
@@ -121,7 +121,13 @@ export default function TerminalPanel({
       .then((list) => {
         if (list.length) setSelected(list[0].id);
         else {
-          setRows([{ id, shell: 'powershell', exited: false }]);
+          setRows([
+            {
+              id,
+              shell: window.desktop.platform === 'win32' ? 'powershell' : 'default',
+              exited: false,
+            },
+          ]);
           setSelected(id);
         }
       })

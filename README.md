@@ -2,13 +2,15 @@
 
 A Windows-first desktop graphical user interface (GUI) with **Grok Build built in**, supporting Grok account OAuth and xAI API keys. The target is comparable local coding workflows to Codex wherever Grok supports them. This is an independent Apache-2.0 project; full workflow parity is still being developed.
 
-**0.8.4 alpha · Windows 10/11 x64 · portable executable.** macOS, Linux and ARM64 are future targets. See [TODO.md](TODO.md), the [parity audit](docs/PARITY.md), and [validation evidence](docs/VALIDATION.md).
+**0.8.5 alpha · Windows 10/11 x64 · portable executable.** Linux x64 packages are experimental; macOS Intel/Apple Silicon packages are **UNTESTED until volunteer desktop validation**. See [platform notes](docs/EXPERIMENTAL-PLATFORMS.md), [TODO.md](TODO.md), the [parity audit](docs/PARITY.md), and [validation evidence](docs/VALIDATION.md).
 
-**Unreleased source additions:** scheduled automations, PR monitoring with optional automatic continuation, paired mobile/REST access, native provider profiles, local PDF/Office/Markdown/media previews, an isolated website preview browser, six-language navigation/common controls and expanded appearance preferences. These are not included in the public 0.8.4 download. See [setup, scope and acceptance limits](docs/EXTENDED-WORKBENCH.md).
+**New in 0.8.5:** scheduled automations, PR monitoring with optional automatic continuation, paired mobile/REST access, native provider profiles, local PDF/Office/Markdown/media previews, an isolated website preview browser, six-language navigation/common controls, expanded appearance preferences, and experimental platform packages. The embedded engine remains Grok Build 1.0.45 with the tested MCP HTTP compression backport. See [changes](docs/RELEASE-0.8.5.md) and [setup, scope and acceptance limits](docs/EXTENDED-WORKBENCH.md).
 
 [Project website and quick-start tutorial](https://robbyjo.github.io/Grok-Workbench/) · [Website source and hosting instructions](docs/WEBSITE.md)
 
-[Download the Windows portable executable](https://github.com/robbyjo/Grok-Workbench/releases/download/v0.8.4/Grok-Workbench-0.8.4-Portable.exe) · [SHA-256 checksum](https://github.com/robbyjo/Grok-Workbench/releases/download/v0.8.4/Grok-Workbench-0.8.4-Portable.exe.sha256) · [Release notes](https://github.com/robbyjo/Grok-Workbench/releases/tag/v0.8.4)
+[Windows x64 portable](https://github.com/robbyjo/Grok-Workbench/releases/download/v0.8.5/Grok-Workbench-0.8.5-Portable.exe) · [Experimental Ubuntu x64 .deb](https://github.com/robbyjo/Grok-Workbench/releases/download/v0.8.5/Grok-Workbench-0.8.5-linux-amd64-EXPERIMENTAL.deb) · [Linux x64 archive](https://github.com/robbyjo/Grok-Workbench/releases/download/v0.8.5/Grok-Workbench-0.8.5-linux-x64-EXPERIMENTAL.tar.gz)
+
+**UNTESTED Mac builds:** [Apple Silicon](https://github.com/robbyjo/Grok-Workbench/releases/download/v0.8.5/Grok-Workbench-0.8.5-macOS-arm64-UNTESTED.zip) · [Intel](https://github.com/robbyjo/Grok-Workbench/releases/download/v0.8.5/Grok-Workbench-0.8.5-macOS-x64-UNTESTED.zip). Both declare macOS 13.0 minimum and use ad-hoc signatures without Apple notarization. [Checksums](https://github.com/robbyjo/Grok-Workbench/releases/download/v0.8.5/SHA256SUMS.txt) · [Release notes](https://github.com/robbyjo/Grok-Workbench/releases/tag/v0.8.5).
 
 **New in 0.8.4:** structured Grok questions, automatic editor/file/Git refresh with draft comparison, per-turn reported-edit review, persistent unread results, and screenshot paste/file drops. See [0.8.4 changes and limits](docs/RELEASE-0.8.4.md).
 
@@ -16,7 +18,7 @@ A Windows-first desktop graphical user interface (GUI) with **Grok Build built i
 
 ## Run on Windows
 
-1. Put `Grok-Workbench-0.8.4-Portable.exe` in a writable folder and open it. Electron, Node, the native Grok engine and its app-local Microsoft C++ runtime are included. There is no Grok CLI installation step.
+1. Put `Grok-Workbench-0.8.5-Portable.exe` in a writable folder and open it. Electron, Node, the native Grok engine and its app-local Microsoft C++ runtime are included. There is no Grok CLI installation step.
 2. Click the **account circle / Sign in to Grok** directly above **Settings**. You can sign in before opening a project. Choose **Sign in with Grok (OAuth)** and complete browser sign-in, or enter an xAI API key locally and save it. OAuth is saved in your Grok profile; API keys default to Windows encrypted storage. Both are reused after application restarts and Windows reboots on the same Windows account/machine. Uncheck **Remember with Windows encrypted storage** for a session-only API key. Authentication is also available in **Settings → Account** without a selected chat.
 3. Successful OAuth sign-in closes the account/settings dialog. If Settings has an unsaved configuration draft, its confirmation announces sign-in success and lets you keep editing. Open a project and send a prompt. Tool approvals and project-trust requests appear above the composer. **Stop turn** cancels the turn. Git and your project's development tools are needed for the corresponding workflows.
 4. Open **Settings → Integrations → MCP servers** to add a STDIO command or HTTP/SSE endpoint, test the connection, edit configuration, and inspect effective tools/policies. Reconnect after changing configuration. MCP servers can require their own Node/Python/tools and provider sign-in. The optional [official GitHub OAuth MCP integration](docs/GITHUB-MCP.md) has real identity-check acceptance.
@@ -26,6 +28,8 @@ The alpha is unsigned. Model requests require network access and account access/
 Free SignPath Foundation signing is being evaluated; the project has not applied or been approved. See the [eligibility assessment](docs/SIGNPATH.md) for current requirements and gaps.
 
 ## Local workflows
+
+On Linux and macOS, updates are manual and application data lives in the standard system application-data folder. Native session pruning/restoration and Windows Sandbox preparation are unavailable. Remembered provider/xAI keys require secure system encrypted storage; session-only keys work when no Linux keyring is available. See [platform setup and volunteer checks](docs/EXPERIMENTAL-PLATFORMS.md).
 
 - Projects and chats: pins, groups, bulk organization, rename, archive and reversible sidebar removal; SQLite history with paginated literal search and matching-message navigation.
 - Coding: streamed Markdown/reasoning/tool activity/plans, exact approval choices, cancellation and session resume; advertised model/effort/mode controls; CLI session import, fork, file checkpoints and reviewed rewind with recovery records.

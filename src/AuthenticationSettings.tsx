@@ -58,9 +58,10 @@ export default function AuthenticationSettings({
     <section>
       <h3>Authentication</h3>
       <p>
-        Sign in before opening a project. OAuth credentials are saved in your Grok profile and
-        reused after restarting Workbench or Windows. API keys are remembered with Windows
-        encryption by default. Authentication changes disconnect idle engines.
+        {window.desktop.platform === 'win32'
+          ? 'Sign in before opening a project. OAuth credentials are saved in your Grok profile and reused after restarting Workbench or Windows. API keys are remembered with Windows encryption by default.'
+          : 'Sign in before opening a project. OAuth credentials are saved in your Grok profile. Remembered API keys require an available system keyring; session-only keys are also supported.'}{' '}
+        Authentication changes disconnect idle engines.
       </p>
       <label className="field-label">
         Authentication method
@@ -118,11 +119,13 @@ export default function AuthenticationSettings({
       </label>
       <label>
         <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />{' '}
-        Remember with Windows encrypted storage
+        {window.desktop.platform === 'win32'
+          ? 'Remember with Windows encrypted storage'
+          : 'Remember with system encrypted storage'}
       </label>
       <p className="muted">
-        Remembered keys survive application restarts and Windows reboots on this account and
-        machine. Uncheck for session-only use. Portable copies may require re-entry elsewhere.
+        Remembered keys survive application restarts and system reboots on this account and machine.
+        Uncheck for session-only use. Copies may require re-entry elsewhere.
       </p>
       <div className="workflow-row">
         <button

@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const repository = 'robbyjo/Grok-Workbench';
+const { validateRun, collectExperimental, fileHash, revision } = require('./release-platforms.cjs');
 const gh = (...args) =>
   cp.execFileSync('gh', args, {
     encoding: 'utf8',
@@ -11,21 +12,6 @@ const gh = (...args) =>
     stdio: ['ignore', 'pipe', 'pipe'],
   });
 const api = (endpoint) => JSON.parse(gh('api', endpoint));
-function validateRun(run, head) {
-  if (
-    !/^[a-f0-9]{40}$/.test(head) ||
-    run.head_sha !== head ||
-    run.head_branch !== 'main' ||
-    !['push', 'workflow_dispatch'].includes(run.event) ||
-    run.conclusion !== 'success' ||
-    run.status !== 'completed' ||
-    run.path !== '.github/workflows/windows.yml' ||
-    run.repository?.full_name !== repository
-  )
-    throw new Error(
-      'Release requires a successful trusted Windows run for this exact main commit.',
-    );
-}
 function validateDraftRelease(release, tag, head) {
   if (
     !Number.isSafeInteger(release.id) ||
@@ -39,10 +25,18 @@ function validateDraftRelease(release, tag, head) {
 }
 async function main() {
   const runId = process.env.GROK_RELEASE_RUN_ID,
+    linuxRunId = process.env.GROK_RELEASE_LINUX_RUN_ID,
+    macosRunId = process.env.GROK_RELEASE_MACOS_RUN_ID,
     head = process.env.GROK_RELEASE_HEAD,
     signed = process.env.GROK_RELEASE_SIGNED === 'true';
   if (!/^\d+$/.test(runId ?? '')) throw new Error('Invalid Windows workflow run ID.');
+  if (!/^\d+$/.test(linuxRunId ?? '') || !/^\d+$/.test(macosRunId ?? ''))
+    throw new Error('Linux and macOS workflow run IDs are required.');
   validateRun(api(`repos/${repository}/actions/runs/${runId}`), head);
+  validateRun(api(`repos/${repository}/actions/runs/${linuxRunId}`), head, 'linux');
+  validateRun(api(`repos/${repository}/actions/runs/${macosRunId}`), head, 'macos');
+  if (api(`repos/${repository}/git/ref/heads/main`).object?.sha !== head)
+    throw new Error('Main changed since the accepted release build.');
   const source = api(`repos/${repository}/contents/package.json?ref=${head}`),
     version = JSON.parse(Buffer.from(source.content, 'base64').toString()).version;
   if (!/^\d+\.\d+\.\d+$/.test(version)) throw new Error('Invalid source version.');
@@ -78,6 +72,8 @@ async function main() {
     manifest.product !== 'Grok Workbench' ||
     manifest.version !== version ||
     manifest.platform !== 'win32-x64' ||
+    manifest.nativeRevision !== revision ||
+    manifest.bindingVersion !== '0.6.0' ||
     manifest.sha256 !== digest ||
     manifest.bytes !== fs.statSync(exe).size ||
     fs.readFileSync(checksumPath, 'utf8').trim() !== digest + '  ' + exeName
@@ -106,10 +102,49 @@ async function main() {
     throw new Error('Approved signing identity failed verification.');
   if (!signed && (identity.signature !== 'NotSigned' || manifest.signerThumbprint))
     throw new Error('Unsigned release selection does not match artifact signature.');
+  const experimental = await collectExperimental({
+    root: directory,
+    version,
+    head,
+    linuxRunId,
+    macosRunId,
+  });
+  const packages = [
+    {
+      file: exeName,
+      platform: 'win32-x64',
+      bytes: manifest.bytes,
+      sha256: digest,
+      engineSha256: manifest.engineSha256,
+      signature: identity.signature,
+    },
+    ...experimental.packages,
+  ];
+  const sums = path.join(directory, 'SHA256SUMS.txt'),
+    provenance = path.join(directory, 'RELEASE-PROVENANCE.json');
+  fs.writeFileSync(sums, packages.map((item) => item.sha256 + '  ' + item.file).join('\n') + '\n');
+  fs.writeFileSync(
+    provenance,
+    JSON.stringify(
+      {
+        format: 1,
+        product: 'Grok Workbench',
+        version,
+        source: head,
+        nativeRevision: revision,
+        workflows: { windows: runId, linux: linuxRunId, macos: macosRunId },
+        packages,
+        macOSStatus: 'UNTESTED - volunteer desktop validation required',
+      },
+      null,
+      2,
+    ) + '\n',
+  );
+  const releaseFiles = [exe, manifestPath, checksumPath, ...experimental.assets, sums, provenance];
   const notes = path.join(directory, 'release-notes.md');
   fs.writeFileSync(
     notes,
-    `Portable Windows x64 alpha. ${signed ? 'Signed using the approved code-signing policy.' : 'Unsigned; Windows may show SmartScreen warnings.'}\n\nBuilt and accepted by [Windows CI](https://github.com/${repository}/actions/runs/${runId}) from source ${head}.\n\nSee [release gates](https://github.com/${repository}/blob/${head}/docs/RELEASE-GATES.md) for external acceptance limits.\n`,
+    `Grok Workbench ${version} alpha brings the platform branches together with provider profiles, local document previews, scheduled tasks and PR watches, paired remote access, and appearance/localization improvements. The embedded engine remains Grok Build 1.0.45 with the tested MCP compression backport.\n\n- **Windows 10/11 x64:** portable executable. ${signed ? 'Signed using the approved code-signing policy.' : 'Unsigned; Windows may show SmartScreen warnings.'} Preserve the adjacent Grok Desktop Data folder when updating.\n- **Linux x64:** experimental Ubuntu 24.04 Debian package and tar.gz archive. Source and extracted-package headless desktop checks passed. Other distributions and real desktop integration need volunteer validation.\n- **macOS Apple Silicon and Intel: UNTESTED until volunteer desktop validation.** The ZIPs declare macOS 13.0 minimum and have ad-hoc signatures, without Apple Developer ID signing or notarization. macOS may block launch.\n\nLinux/macOS updates are manual. Native session pruning/restoration and Windows Sandbox preparation are unavailable there. Remembered keys require secure system storage; Linux basic_text fallback is refused.\n\nAll packages come from the same public source ${head}. Exact tested CI artifacts: [Windows](https://github.com/${repository}/actions/runs/${runId}), [Linux](https://github.com/${repository}/actions/runs/${linuxRunId}), [macOS](https://github.com/${repository}/actions/runs/${macosRunId}). SHA256SUMS.txt and RELEASE-PROVENANCE.json accompany per-package checksums/manifests.\n\nSee [platform notes](https://github.com/${repository}/blob/${head}/docs/EXPERIMENTAL-PLATFORMS.md) and [release gates](https://github.com/${repository}/blob/${head}/docs/RELEASE-GATES.md) for validation scope and volunteer checks. Remote access, external provider accounts, OS containment and Mac desktop behavior are not certified by local fixtures.\n`,
   );
   // Reserve the exact immutable target explicitly: a draft need not create its
   // Git ref until publication. POST refuses an existing ref rather than moving it.
@@ -130,16 +165,14 @@ async function main() {
     'release',
     'create',
     tag,
-    exe,
-    manifestPath,
-    checksumPath,
+    ...releaseFiles,
     '--repo',
     repository,
     '--target',
     head,
     '--verify-tag',
     '--title',
-    'Grok Workbench ' + tag,
+    `Grok Workbench ${version} (alpha)`,
     '--draft',
     '--prerelease',
     '--notes-file',
@@ -156,15 +189,40 @@ async function main() {
   const tagged = api(`repos/${repository}/git/ref/tags/${tag}`);
   if (tagged.object?.type !== 'commit' || tagged.object.sha !== head)
     throw new Error('Release tag does not match the tested source. Release remains draft.');
-  for (const file of [exe, manifestPath, checksumPath]) {
-    const local = crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex'),
+  if (release.assets.length !== releaseFiles.length)
+    throw new Error('Unexpected draft release assets.');
+  for (const file of releaseFiles) {
+    const local = await fileHash(file),
       asset = release.assets.find((a) => a.name === path.basename(file));
     if (!asset || asset.digest !== 'sha256:' + local || asset.size !== fs.statSync(file).size)
       throw new Error('Uploaded asset verification failed. Release remains draft for repair.');
   }
-  gh('release', 'edit', tag, '--repo', repository, '--draft=false');
-  const published = api(`repos/${repository}/releases/${draftId}`);
-  if (published.draft) throw new Error('Publication was not confirmed.');
+  if (api(`repos/${repository}/git/ref/heads/main`).object?.sha !== head)
+    throw new Error('Main changed during release preparation. Verified release remains draft.');
+  gh(
+    'api',
+    `repos/${repository}/releases/${draftId}`,
+    '-X',
+    'PATCH',
+    '-F',
+    'draft=false',
+    '-F',
+    'prerelease=false',
+    '-f',
+    'make_latest=true',
+  );
+  let published;
+  for (let attempt = 0; attempt < 10; attempt++) {
+    published = api(`repos/${repository}/releases/${draftId}`);
+    if (
+      !published.draft &&
+      !published.prerelease &&
+      api(`repos/${repository}/releases/latest`).id === draftId
+    )
+      break;
+    if (attempt === 9) throw new Error('Publication/Latest status was not confirmed.');
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
   console.log(published.html_url);
 }
 module.exports = { validateRun, validateDraftRelease };

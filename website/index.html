@@ -4,14 +4,18 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#f7f8f2" />
+    <meta name="grok-workbench-version" content="0.8.5" />
     <meta
       name="description"
-      content="Grok Workbench is an open-source Grok Build GUI for Windows, with the Grok engine built in. Chat, edit code, review Git changes and use terminals in one desktop app."
+      content="Grok Workbench is an open-source Grok Build GUI for Windows, with experimental Linux and UNTESTED macOS builds. Chat, edit code, review Git changes and use terminals with the Grok engine built in."
     />
-    <title>Grok Workbench — Grok Build GUI for Windows</title>
+    <title>Grok Workbench — Grok Build GUI for Windows, Linux and macOS</title>
     <link rel="canonical" href="https://robbyjo.github.io/Grok-Workbench/" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Grok Workbench — Grok Build GUI for Windows" />
+    <meta
+      property="og:title"
+      content="Grok Workbench — Grok Build GUI for Windows, Linux and macOS"
+    />
     <meta
       property="og:description"
       content="An open-source graphical user interface for Grok Build. Chat, edit code, review Git changes and use terminals, with no separate Grok CLI installation."
@@ -30,6 +34,7 @@
         >Grok <span>Workbench</span></a
       >
       <nav aria-label="Main navigation">
+        <a href="#downloads">Downloads</a>
         <a href="#workspace">The workspace</a>
         <a href="#getting-started">Quick start</a>
         <a class="repo-link" href="https://github.com/robbyjo/Grok-Workbench"
@@ -49,20 +54,15 @@
     <main id="main">
       <section class="hero wrap" aria-labelledby="hero-title">
         <p class="eyebrow">
-          <span class="status-dot" aria-hidden="true"></span> WINDOWS DESKTOP · OPEN SOURCE · 0.8.4
-          ALPHA
+          <span class="status-dot" aria-hidden="true"></span> DESKTOP · OPEN SOURCE · 0.8.5 ALPHA
         </p>
         <h1 id="hero-title">Grok Build GUI.<br />Your project, in view.</h1>
         <p class="hero-description">
-          An open-source graphical user interface (GUI) for Grok Build on Windows.<br
-            class="desktop-break"
-          />
+          An open-source graphical user interface (GUI) for Grok Build.<br class="desktop-break" />
           Chat, edit files, review changes, and run your tools in one place.
         </p>
         <div class="hero-actions">
-          <a
-            class="button primary"
-            href="https://github.com/robbyjo/Grok-Workbench/releases/download/v0.8.4/Grok-Workbench-0.8.4-Portable.exe"
+          <a class="button primary" href="#downloads"
             ><svg
               width="18"
               height="18"
@@ -73,21 +73,97 @@
               aria-hidden="true"
             >
               <path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5" /></svg
-            >Download for Windows</a
+            >Choose your download</a
           >
           <a class="text-link" href="#getting-started"
             >Start here <span aria-hidden="true">↓</span></a
           >
         </div>
         <p class="download-note">
-          Windows 10/11 x64 · Portable executable · Unsigned alpha<br /><a
-            href="https://github.com/robbyjo/Grok-Workbench/releases/tag/v0.8.4"
+          Windows x64 · Experimental Linux x64 · UNTESTED Mac builds<br /><a
+            href="https://github.com/robbyjo/Grok-Workbench/releases/tag/v0.8.5"
             >Release notes</a
           ><span aria-hidden="true"> / </span
           ><a
-            href="https://github.com/robbyjo/Grok-Workbench/releases/download/v0.8.4/Grok-Workbench-0.8.4-Portable.exe.sha256"
-            >SHA-256 checksum</a
+            href="https://github.com/robbyjo/Grok-Workbench/releases/download/v0.8.5/SHA256SUMS.txt"
+            >SHA-256 checksums</a
           >
+        </p>
+      </section>
+
+      <section class="downloads wrap" id="downloads" aria-labelledby="downloads-title">
+        <div class="section-intro">
+          <p class="eyebrow">VERSION 0.8.5 · ALPHA</p>
+          <h2 id="downloads-title">Choose your platform.</h2>
+          <p>One app, with the Grok engine included. Pick the build for your computer.</p>
+        </div>
+        <div class="download-grid">
+          <article class="download-card" aria-labelledby="windows-title">
+            <span class="platform-badge">Unsigned alpha</span>
+            <h3 id="windows-title">Windows</h3>
+            <p>Windows 10/11 · x64</p>
+            <p>
+              A portable executable. Keep <code>Grok Desktop Data</code> beside it when moving or
+              updating the app.
+            </p>
+            <div class="package-links">
+              <a
+                class="button primary"
+                href="https://github.com/robbyjo/Grok-Workbench/releases/download/v0.8.5/Grok-Workbench-0.8.5-Portable.exe"
+                >Download Windows x64</a
+              >
+            </div>
+          </article>
+          <article class="download-card" aria-labelledby="linux-title">
+            <span class="platform-badge">Experimental</span>
+            <h3 id="linux-title">Linux</h3>
+            <p>Ubuntu 24.04 · x64</p>
+            <p>
+              Debian package and archive. Automated headless desktop checks cover the packaged app;
+              other distributions need volunteer testing.
+            </p>
+            <div class="package-links">
+              <a
+                class="button primary"
+                href="https://github.com/robbyjo/Grok-Workbench/releases/download/v0.8.5/Grok-Workbench-0.8.5-linux-amd64-EXPERIMENTAL.deb"
+                >Download Ubuntu .deb</a
+              >
+              <a
+                class="text-link"
+                href="https://github.com/robbyjo/Grok-Workbench/releases/download/v0.8.5/Grok-Workbench-0.8.5-linux-x64-EXPERIMENTAL.tar.gz"
+                >Linux .tar.gz archive ↗</a
+              >
+            </div>
+          </article>
+          <article class="download-card mac-download" aria-labelledby="macos-title">
+            <span class="platform-badge untested">UNTESTED · volunteers needed</span>
+            <h3 id="macos-title">macOS</h3>
+            <p>Apple Silicon or Intel · macOS 13.0 minimum declared</p>
+            <p>
+              <strong>Desktop behavior is UNTESTED until volunteer validation.</strong> Ad hoc
+              signed; no Apple notarization. macOS may block launch.
+            </p>
+            <div class="package-links">
+              <a
+                class="button primary"
+                href="https://github.com/robbyjo/Grok-Workbench/releases/download/v0.8.5/Grok-Workbench-0.8.5-macOS-arm64-UNTESTED.zip"
+                >Apple Silicon (UNTESTED)</a
+              >
+              <a
+                class="text-link"
+                href="https://github.com/robbyjo/Grok-Workbench/releases/download/v0.8.5/Grok-Workbench-0.8.5-macOS-x64-UNTESTED.zip"
+                >Intel Mac (UNTESTED) ↗</a
+              >
+            </div>
+          </article>
+        </div>
+        <p class="download-details">
+          Linux and Mac updates are manual. Native session pruning/restoration and Windows Sandbox
+          preparation are unavailable on these experimental platforms. See
+          <a
+            href="https://github.com/robbyjo/Grok-Workbench/blob/main/docs/EXPERIMENTAL-PLATFORMS.md"
+            >platform notes and the volunteer checklist</a
+          >.
         </p>
       </section>
 
@@ -156,8 +232,10 @@
             <li>
               <h3>Download and open</h3>
               <p>
-                Save <code>Grok-Workbench-0.8.4-Portable.exe</code> in a writable folder, then open
-                it. The alpha is currently unsigned.
+                Choose the package for your platform above. On Windows, save
+                <code>Grok-Workbench-0.8.5-Portable.exe</code> in a writable folder and open it. On
+                Ubuntu, install the <code>.deb</code>. Mac builds are UNTESTED; read the platform
+                notes before volunteering.
               </p>
             </li>
             <li>
@@ -196,14 +274,15 @@
         <h2 id="notes-title">A few things to know</h2>
         <div class="notes-grid">
           <p>
-            <strong>Keep your workspace with you.</strong> Portable data lives in
+            <strong>Keep your workspace with you.</strong> Windows portable data lives in
             <code>Grok Desktop Data</code> beside the executable. Move both together. Encrypted API
-            keys may need re-entry on another PC or Windows account.
+            keys may need re-entry on another PC or Windows account. Linux and Mac use their system
+            application-data folders; preserve those folders during manual updates.
           </p>
           <p>
-            <strong>Choose permissions thoughtfully.</strong> Agent tools run with your Windows
-            permissions. Approval choices control tool requests; Grok’s OS-level agent sandbox is
-            unavailable on Windows.
+            <strong>Choose permissions thoughtfully.</strong> Terminals and project actions run with
+            your user permissions. Approval choices control tool requests; Grok’s OS-level agent
+            sandbox is unavailable on Windows. Agent isolation on Linux and Mac remains unvalidated.
             <a href="https://github.com/robbyjo/Grok-Workbench/blob/main/docs/WINDOWS-ISOLATION.md"
               >About isolation <span aria-hidden="true">↗</span></a
             >
@@ -227,8 +306,8 @@
       <div>
         <a class="footer-brand" href="#">Grok Workbench</a>
         <p>
-          An independent Apache-2.0 project. Not affiliated with xAI.<br />Windows-first alpha;
-          macOS, Linux, and ARM64 are future targets.
+          An independent Apache-2.0 project. Not affiliated with xAI.<br />Windows-first alpha ·
+          Experimental Linux · UNTESTED macOS.
         </p>
       </div>
       <nav aria-label="Project resources">

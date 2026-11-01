@@ -66,7 +66,25 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             native/studio-engine/target
+            upstream/grok-build
           key: native-${{ runner.os }}-${{ runner.arch }}-rust-1.95.0-${{ steps.native-image.outputs.identity }}-${{ hashFiles('native/studio-engine/Cargo.*', 'native/studio-engine/build.rs', 'native/studio-engine/src/**', 'native/studio-engine/patches/**', 'scripts/engine-*.cjs') }}
+          restore-keys: |
+            native-${{ runner.os }}-${{ runner.arch }}-rust-1.95.0-${{ steps.native-image.outputs.identity }}-
+      - name: Restore earlier native cache format
+        # Adding the upstream checkout changes the cache version. Import a prior
+        # target cache once, then let Cargo revalidate it against the current source.
+        if: steps.native-cache.outputs.cache-hit != 'true'
+        continue-on-error: true
+        timeout-minutes: 5
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            native/studio-engine/target
+          key: legacy-import-${{ runner.os }}-${{ runner.arch }}-${{ steps.native-image.outputs.identity }}-${{ github.sha }}
+          restore-keys: |
+            native-${{ runner.os }}-${{ runner.arch }}-rust-1.95.0-${{ steps.native-image.outputs.identity }}-
       - name: Build pinned embedded engine
         run: |
           rustup toolchain install 1.95.0 --profile minimal
@@ -83,6 +101,7 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             native/studio-engine/target
+            upstream/grok-build
           key: ${{ steps.native-cache.outputs.cache-primary-key }}
       - name: Backend and native MCP acceptance
         run: npm test

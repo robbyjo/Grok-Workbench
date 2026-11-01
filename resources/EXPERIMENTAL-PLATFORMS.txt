@@ -1,0 +1,23 @@
+Grok Workbench - EXPERIMENTAL PLATFORM BUILDS
+
+macOS: UNTESTED until a volunteer validates the app on real Mac hardware.
+These builds have no trusted Developer ID signature or Apple notarization.
+An ad-hoc signature supports development loading; it does not establish publisher trust.
+
+Linux: experimental. See the accompanying validation record for the precise
+Ubuntu build and automated smoke-test results. Other distributions are untested.
+
+The embedded Grok Build source remains 1.0.45 at
+2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8, with the tested MCP compression backport.
+No CLI 1.0.70 migration is included. No account credentials are packaged.
+
+Manual updates only. Close Workbench and preserve its application data before
+installing another verified package. Native pruning/restoration and Windows
+Sandbox preparation are disabled on these experimental platforms.
+Remembered API keys require an available system keyring; use session-only
+storage or fresh OAuth sign-in if a secure keyring is unavailable.
+
+Volunteer checklist: launch, sign in locally, send/cancel a chat, reconnect and
+resume after restart, edit/save files, use Git and terminal tabs, paste/drop
+attachments, and connect an MCP server. Report OS version, CPU architecture,
+package checksum, observed behavior and sanitized errors. Never send credentials.

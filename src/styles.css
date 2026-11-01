@@ -2401,3 +2401,12 @@ pre,
   left: 0;
   background: var(--surface-1);
 }
+.experimental-platform {
+  margin: 0;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
+  background: #4b3a18;
+  color: #fff0c2;
+  font-size: 12px;
+  flex-shrink: 0;
+}

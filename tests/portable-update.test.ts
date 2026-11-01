@@ -77,6 +77,25 @@ async function fixture(migration = false, snapshot = false) {
   );
   return { api, root, folder, exe, release };
 }
+test('Windows update selection ignores other platform assets in a combined release', async () => {
+  const f = await fixture();
+  for (const name of [
+    'Grok-Workbench-0.6.4-macOS-arm64-UNTESTED.zip',
+    'Grok-Workbench-0.6.4-linux-amd64-EXPERIMENTAL.deb',
+  ])
+    f.release.assets.unshift({
+      id: 10 + f.release.assets.length,
+      name,
+      size: 100,
+      digest: 'sha256:' + 'a'.repeat(64),
+      browser_download_url:
+        'https://github.com/robbyjo/Grok-Workbench/releases/download/v0.6.4/' + name,
+    });
+  const review = await f.api.check(true);
+  assert.equal(review.executable?.name, 'Grok-Workbench-0.6.4-Portable.exe');
+  assert.equal(review.compatibleMetadata, true);
+});
+
 test(
   'engine change requires explicit migration approval and verified backup; tampering prevents Windows replacement',
   { skip: process.platform !== 'win32' },

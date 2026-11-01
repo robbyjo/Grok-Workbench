@@ -11,6 +11,7 @@ import { join } from 'node:path';
 import type { History } from './history';
 import { openDocument, saveDocument, createDocument } from './editor';
 import type { Wire } from '../shared/types';
+import { encryptedStorageAvailable } from './credential-storage';
 
 export interface ProviderProfile {
   id: string;
@@ -34,6 +35,7 @@ export class Providers {
     private home: () => string,
     private crypto: {
       isEncryptionAvailable(): boolean;
+      getSelectedStorageBackend?(): string;
       encryptString(value: string): Buffer;
       decryptString(value: Buffer): string;
     },
@@ -66,6 +68,12 @@ export class Providers {
     return row;
   }
   private key(id: string) {
+    if (
+      !this.sessions.has(id) &&
+      existsSync(this.keyPath(id)) &&
+      !encryptedStorageAvailable(this.crypto)
+    )
+      throw new Error('Secure system keyring unavailable. Re-enter a session-only provider key.');
     const key =
       this.sessions.get(id) ??
       (existsSync(this.keyPath(id))
@@ -189,8 +197,13 @@ export class Providers {
     });
     // A named, failing credential helper blocks the native fallback to an unrelated
     // xAI key when these model entries are used outside the desktop's environment.
+    const command = process.platform === 'win32' ? 'powershell.exe' : '/bin/sh';
+    const args =
+      process.platform === 'win32'
+        ? ['-NoProfile', '-NonInteractive', '-Command', 'exit 1']
+        : ['-c', 'exit 1'];
     const guard = profiles.length
-      ? '\n[auth_provider.workbench-desktop-key-required]\ncommand = "powershell.exe"\nargs = ["-NoProfile", "-NonInteractive", "-Command", "exit 1"]\ntimeout_secs = 5\n'
+      ? `\n[auth_provider.workbench-desktop-key-required]\ncommand = ${JSON.stringify(command)}\nargs = ${JSON.stringify(args)}\ntimeout_secs = 5\n`
       : '';
     return `${base.trimEnd()}\n\n${begin}\n${lines.join('')}${guard}\n${end}\n`;
   }
@@ -236,7 +249,7 @@ export class Providers {
       throw new Error('Enter a valid provider API key.');
     const p = review.profile;
     const retainedKey = key || this.key(p.id);
-    if (input.remember === true && !this.crypto.isEncryptionAvailable())
+    if (input.remember === true && !encryptedStorageAvailable(this.crypto))
       throw new Error('Encrypted storage unavailable. Use a session-only key.');
     const current = await this.config();
     if (current.revision !== review.revision)

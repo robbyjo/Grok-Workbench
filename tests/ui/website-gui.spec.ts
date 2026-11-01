@@ -12,12 +12,24 @@ test('website describes the Grok Build GUI in search metadata and fits desktop a
   const app = await electron.launch({ args: [script], cwd: resolve('.') });
   try {
     const page = await app.firstWindow();
-    await expect(page).toHaveTitle('Grok Workbench — Grok Build GUI for Windows');
+    await expect(page).toHaveTitle('Grok Workbench — Grok Build GUI for Windows, Linux and macOS');
     await expect(page.locator('meta[name="description"]')).toHaveAttribute(
       'content',
       /Grok Build GUI for Windows/,
     );
     await expect(page.locator('h1')).toContainText('Grok Build GUI.');
+    await expect(page.locator('.download-card')).toHaveCount(3);
+    await expect(
+      page.getByRole('link', { name: 'Download Windows x64', exact: true }),
+    ).toHaveAttribute('href', /v0\.8\.5\/Grok-Workbench-0\.8\.5-Portable\.exe$/);
+    await expect(
+      page.getByRole('link', { name: 'Download Ubuntu .deb', exact: true }),
+    ).toBeVisible();
+    await expect(page.locator('.mac-download')).toContainText('UNTESTED');
+    await expect(
+      page.getByRole('link', { name: 'Apple Silicon (UNTESTED)', exact: true }),
+    ).toBeVisible();
+    await expect(page.getByRole('link', { name: /Intel Mac \(UNTESTED\)/ })).toBeVisible();
     for (const width of [1280, 390]) {
       await app.evaluate(
         ({ BrowserWindow }, width) => BrowserWindow.getAllWindows()[0].setSize(width, 900),

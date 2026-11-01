@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { History } from '../electron/history';
@@ -19,6 +19,7 @@ test('provider previews preserve configuration and isolate keys, endpoints and s
   const history = new History(join(root, 'history.sqlite'), 64);
   const crypto = {
     isEncryptionAvailable: () => true,
+    getSelectedStorageBackend: () => 'gnome_libsecret',
     encryptString: (s: string) => Buffer.from(s).reverse(),
     decryptString: (s: Buffer) => Buffer.from(s).reverse().toString(),
   };
@@ -82,6 +83,62 @@ test('provider previews preserve configuration and isolate keys, endpoints and s
     history.db.close();
   }
 });
+
+test(
+  'Linux provider keys reject basic_text persistence before changing configuration',
+  { skip: process.platform !== 'linux' },
+  async () => {
+    const root = mkdtempSync(join(tmpdir(), 'wb-provider-keyring-'));
+    const home = join(root, 'grok'),
+      keys = join(root, 'keys');
+    mkdirSync(home);
+    writeFileSync(join(home, 'config.toml'), '# retained\n');
+    const history = new History(join(root, 'history.sqlite'), 64);
+    const providers = new Providers(keys, history, () => home, {
+      isEncryptionAvailable: () => true,
+      getSelectedStorageBackend: () => 'basic_text',
+      encryptString: () => {
+        throw new Error('Insecure encryption must not run');
+      },
+      decryptString: () => {
+        throw new Error('Insecure decryption must not run');
+      },
+    });
+    try {
+      const review = await providers.preview({
+        name: 'Fixture',
+        model: 'fixture',
+        baseUrl: 'http://127.0.0.1:1234/v1',
+        backend: 'chat_completions',
+        contextWindow: 32000,
+      });
+      await assert.rejects(
+        providers.save({
+          token: review.token,
+          confirmed: true,
+          key: 'fixture-only',
+          remember: true,
+        }),
+        /Encrypted storage unavailable/,
+      );
+      assert.equal(readFileSync(join(home, 'config.toml'), 'utf8'), '# retained\n');
+      assert.deepEqual(providers.list(), []);
+      assert.deepEqual(readdirSync(keys), []);
+      await providers.save({
+        token: review.token,
+        confirmed: true,
+        key: 'fixture-only',
+        remember: false,
+      });
+      assert.equal(providers.list()[0].remembered, false);
+      assert.deepEqual(readdirSync(keys), []);
+      assert.match(readFileSync(join(home, 'config.toml'), 'utf8'), /command = "\/bin\/sh"/);
+      providers.assert(providers.list()[0].id);
+    } finally {
+      history.db.close();
+    }
+  },
+);
 test('Office previews extract inert content and reject oversized archives and private file paths', async () => {
   const docx = zipSync({
     'word/document.xml': strToU8(
@@ -155,6 +212,7 @@ test('a partial provider update blocks native admission across restart until a r
   const history = new History(join(root, 'history.sqlite'), 64);
   const crypto = {
     isEncryptionAvailable: () => true,
+    getSelectedStorageBackend: () => 'gnome_libsecret',
     encryptString: (_s: string): Buffer => {
       throw new Error('fixture encryption failure');
     },
