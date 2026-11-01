@@ -7,19 +7,25 @@ export class Credentials {
   constructor(root: string) {
     this.file = join(root, 'xai-api-key.bin');
   }
+  private encryptionAvailable() {
+    return (
+      safeStorage.isEncryptionAvailable() &&
+      (process.platform !== 'linux' || safeStorage.getSelectedStorageBackend() !== 'basic_text')
+    );
+  }
   status() {
     return {
       saved: existsSync(this.file),
       session: Boolean(this.session),
       environment: Boolean(process.env.XAI_API_KEY),
-      encryptedStorage: safeStorage.isEncryptionAvailable(),
+      encryptedStorage: this.encryptionAvailable(),
     };
   }
   save(key: string, remember: boolean) {
     if (typeof key !== 'string' || !key.trim() || key.length > 4096 || /[\r\n\0]/.test(key))
       throw new Error('Enter a valid xAI API key in this local window.');
     if (remember) {
-      if (!safeStorage.isEncryptionAvailable())
+      if (!this.encryptionAvailable())
         throw new Error('Encrypted credential storage is unavailable. Use session-only storage.');
       writeFileSync(this.file, safeStorage.encryptString(key.trim()), { mode: 0o600 });
     } else if (existsSync(this.file)) unlinkSync(this.file);
@@ -42,7 +48,7 @@ export class Credentials {
         key = safeStorage.decryptString(readFileSync(this.file));
       } catch {
         throw new Error(
-          'The saved API key cannot be decrypted on this Windows account/machine. Re-enter it locally or choose OAuth.',
+          'The saved API key cannot be decrypted with this system account/keyring. Re-enter it locally or choose OAuth.',
         );
       }
     }

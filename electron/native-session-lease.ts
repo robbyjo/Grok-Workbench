@@ -3,7 +3,9 @@ import { spawn } from 'node:child_process';
  * This follows the pinned runtime's .lock convention; separately running clients must still stop.
  */
 export async function nativeSessionLease(paths: string[]) {
-  if (process.platform !== 'win32' || !paths.length) return async () => {};
+  if (!paths.length) return async () => {};
+  if (process.platform !== 'win32')
+    throw new Error('Native session mutation is disabled until POSIX locking is accepted.');
   if (paths.length > 4096) throw new Error('Native retention exceeds its lock-file limit.');
   const script =
     "$ErrorActionPreference='Stop';$held=@();try{$paths=([Console]::ReadLine()|ConvertFrom-Json);foreach($p in $paths){$held+=New-Object IO.FileStream($p,[IO.FileMode]::Open,[IO.FileAccess]::Read,([IO.FileShare]::Read -bor [IO.FileShare]::Delete))};[Console]::WriteLine('LEASE_READY');[Console]::ReadLine()|Out-Null}catch{[Console]::WriteLine('LEASE_FAILED');exit 1}finally{foreach($h in $held){$h.Dispose()}}";

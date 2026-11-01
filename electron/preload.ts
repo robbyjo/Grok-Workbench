@@ -147,6 +147,8 @@ const methods = new Set([
   'workspace:reveal',
 ]);
 const api: DesktopAPI = {
+  platform: process.platform,
+  arch: process.arch,
   filePath: (file) => webUtils.getPathForFile(file),
   call: (method, args = {}) => {
     if (!methods.has(method)) return Promise.reject(new Error('Unknown desktop operation.'));

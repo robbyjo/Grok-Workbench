@@ -5,8 +5,12 @@ export default function ProjectActions({ thread }: { thread?: Thread }) {
     [preview, setPreview] = useState<Wire>();
   const [actionId, setActionId] = useState<string>();
   const [name, setName] = useState(''),
-    [command, setCommand] = useState('powershell.exe'),
-    [args, setArgs] = useState('-NoProfile\n-File\n.grok/setup.ps1'),
+    [command, setCommand] = useState(
+      window.desktop.platform === 'win32' ? 'powershell.exe' : '/bin/sh',
+    ),
+    [args, setArgs] = useState(
+      window.desktop.platform === 'win32' ? '-NoProfile\n-File\n.grok/setup.ps1' : '.grok/setup.sh',
+    ),
     [directory, setDirectory] = useState('.'),
     [setup, setSetup] = useState(false),
     [error, setError] = useState(''),

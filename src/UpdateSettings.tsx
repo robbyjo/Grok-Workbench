@@ -8,6 +8,17 @@ export default function UpdateSettings() {
     [migration, setMigration] = useState(false),
     [busy, setBusy] = useState(false),
     [error, setError] = useState('');
+  if (window.desktop.platform !== 'win32')
+    return (
+      <section className="update-settings">
+        <h3>Manual package updates</h3>
+        <p>
+          This experimental platform build does not replace itself. Close Workbench, preserve its
+          application data, and install a separately verified package. macOS builds require
+          volunteer validation.
+        </p>
+      </section>
+    );
   async function run(method: string, args: Wire = {}) {
     setBusy(true);
     setError('');

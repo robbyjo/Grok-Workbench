@@ -781,6 +781,15 @@ export default function App() {
         </div>
       </aside>
       <main className="workspace">
+        {window.desktop.platform !== 'win32' && (
+          <p className="experimental-platform" role="status">
+            Experimental{' '}
+            {window.desktop.platform === 'darwin'
+              ? 'macOS — UNTESTED: volunteer validation required'
+              : 'Linux'}{' '}
+            build · Manual updates only · Native pruning and Windows Sandbox unavailable.
+          </p>
+        )}
         <header className="topbar">
           <div className="breadcrumbs">
             <Folder size={15} />

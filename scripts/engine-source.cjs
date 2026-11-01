@@ -107,3 +107,27 @@ if (!persistText.includes(windowsLock)) {
   persistText = persistText.replace(originalLock, windowsLock);
   fs.writeFileSync(persist, persistText);
 }
+// Workbench compatibility backport: the MCP transport uses its own reqwest 0.13
+// dependency, so the workspace's 0.12 decompression features do not reach it.
+const mcpManifest = path.join(root, 'crates/codegen/xai-grok-mcp/Cargo.toml');
+let mcpText = fs.readFileSync(mcpManifest, 'utf8');
+const mcpNewline = mcpText.includes('\r\n') ? '\r\n' : '\n';
+mcpText = mcpText.replaceAll('\r\n', '\n');
+const compressionMarker = '# Workbench: negotiate and decode compressed MCP HTTP responses.';
+if (!mcpText.includes(compressionMarker)) {
+  const anchor = `reqwest = { version = "0.13", default-features = false, features = [
+    "blocking",
+    "json",
+    "rustls",
+    "stream",
+] }`;
+  if (!mcpText.includes(anchor)) throw new Error('MCP HTTP compression patch no longer applies.');
+  mcpText = mcpText.replace(
+    anchor,
+    `${compressionMarker}\n${anchor.replace(
+      '    "stream",',
+      '    "stream",\n    "gzip",\n    "brotli",\n    "deflate",\n    "zstd",',
+    )}`,
+  );
+  fs.writeFileSync(mcpManifest, mcpText.replaceAll('\n', mcpNewline));
+}

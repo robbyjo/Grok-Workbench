@@ -6,6 +6,8 @@ export default function SandboxLaunch({ projectId }: { projectId: string }) {
     [result, setResult] = useState<Wire>(),
     [error, setError] = useState(''),
     [busy, setBusy] = useState(false);
+  if (window.desktop.platform !== 'win32')
+    return <p>Windows Sandbox project-copy preparation is available on Windows.</p>;
   async function run(method: string, args: Wire) {
     setBusy(true);
     setError('');

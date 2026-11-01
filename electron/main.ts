@@ -151,6 +151,16 @@ function trusted(frame: Electron.WebFrameMain | null) {
   );
 }
 async function dispatch(method: string, args: Wire) {
+  if (process.platform !== 'win32') {
+    if (method.startsWith('updates:') && method !== 'updates:status')
+      throw new Error('Experimental platform packages use manual updates.');
+    if (['storage:prune', 'storage:restore'].includes(method))
+      throw new Error(
+        'Native session pruning/restoration is disabled pending POSIX lock acceptance.',
+      );
+    if (method.startsWith('sandbox:'))
+      throw new Error('Windows Sandbox preparation is available only on Windows.');
+  }
   // Native inventories may start helpers directly rather than through agent:connect.
   // Scan first, then re-evaluate the operation guards below before allowing startup.
   if (
@@ -1431,7 +1441,10 @@ if (dataDirectory) {
   app.setPath('sessionData', dataDirectory);
 }
 // Portable launches use an adjacent Grok profile; never copy existing credentials.
-if (process.env.PORTABLE_EXECUTABLE_DIR && !process.env.GROK_HOME) {
+if (
+  (process.env.PORTABLE_EXECUTABLE_DIR || process.platform !== 'win32') &&
+  !process.env.GROK_HOME
+) {
   process.env.GROK_HOME = join(app.getPath('userData'), 'grok');
   mkdirSync(process.env.GROK_HOME, { recursive: true });
 }

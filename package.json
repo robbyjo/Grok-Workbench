@@ -25,6 +25,7 @@
     "package:portable": "npm run build && npm run engine:build && npm run licenses && electron-builder --win portable --x64 && node scripts/update-manifest.cjs",
     "package:win": "npm run build && npm run engine:build && npm run licenses && electron-builder --win nsis --x64",
     "package:dir": "npm run build && npm run engine:build && npm run licenses && electron-builder --win --x64 --dir",
+    "package:experimental": "npm run build && npm run engine:build && npm run licenses && node scripts/package-experimental.cjs",
     "licenses": "node scripts/licenses.cjs",
     "package:signed": "powershell.exe -NoProfile -NonInteractive -File scripts/signing-preflight.ps1 && npm run build && npm run engine:build && npm run licenses && electron-builder --win portable --x64 --config scripts/signing-config.cjs --publish never && node scripts/update-manifest.cjs --require-signing",
     "format": "prettier --write .",

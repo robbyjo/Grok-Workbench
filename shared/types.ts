@@ -150,6 +150,8 @@ export type DesktopEvent =
   | { type: 'focus-chat'; id: string }
   | { type: 'attention'; id: string; kind: 'complete' | 'failure' };
 export interface DesktopAPI {
+  readonly platform: string;
+  readonly arch: string;
   filePath(file: File): string;
   call<T = any>(method: string, args?: Wire): Promise<T>;
   onEvent(callback: (event: DesktopEvent) => void): () => void;

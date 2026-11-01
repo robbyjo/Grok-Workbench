@@ -2,8 +2,10 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const cp = require('node:child_process');
-if (process.platform !== 'win32')
-  throw new Error('Updater bootstrap builds currently support Windows x64 only.');
+if (process.platform !== 'win32') {
+  console.log('Experimental platform build: manual package updates only.');
+  process.exit(0);
+}
 fs.mkdirSync('.runtime', { recursive: true });
 cp.execFileSync(
   'rustup',

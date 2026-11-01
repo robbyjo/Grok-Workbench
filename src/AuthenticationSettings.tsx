@@ -118,7 +118,9 @@ export default function AuthenticationSettings({
       </label>
       <label>
         <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />{' '}
-        Remember with Windows encrypted storage
+        {window.desktop.platform === 'win32'
+          ? 'Remember with Windows encrypted storage'
+          : 'Remember with system encrypted storage'}
       </label>
       <p className="muted">
         Remembered keys survive application restarts and Windows reboots on this account and

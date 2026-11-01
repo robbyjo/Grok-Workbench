@@ -1,0 +1,88 @@
+name: Experimental macOS builds - UNTESTED
+on:
+  push:
+    branches: [codex/linux-macos-builds]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: experimental-macos-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  macos:
+    name: macOS ${{ matrix.arch }} - UNTESTED
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            arch: arm64
+          - runner: macos-15-intel
+            arch: x64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 120
+    env:
+      CARGO_BUILD_JOBS: '2'
+      XAI_API_KEY: ''
+      GROK_DEPLOYMENT_KEY: ''
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install locked app dependencies
+        run: |
+          npm ci
+          node node_modules/electron/install.js
+          rustup toolchain install 1.95.0 --profile minimal
+          rustup default 1.95.0
+      - name: Restore native compilation cache
+        id: native-cache
+        continue-on-error: true
+        timeout-minutes: 5
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            native/studio-engine/target
+            upstream/grok-build
+          key: experimental-${{ runner.os }}-${{ runner.arch }}-rust-1.95-${{ hashFiles('native/studio-engine/Cargo.*', 'native/studio-engine/build.rs', 'native/studio-engine/src/**', 'native/studio-engine/patches/**', 'scripts/engine-*.cjs', 'scripts/protoc.cjs') }}
+      - name: Build app and pinned native engine
+        run: |
+          npm run build
+          npm run engine:build
+      - name: Preserve successful native compilation
+        if: steps.native-cache.outputs.cache-hit != 'true'
+        continue-on-error: true
+        timeout-minutes: 5
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            native/studio-engine/target
+            upstream/grok-build
+          key: ${{ steps.native-cache.outputs.cache-primary-key }}
+      - name: Protocol and local native MCP regressions
+        run: npx tsx --test tests/agent.test.ts tests/mcp-compression.test.ts
+      - name: Package unsigned experimental app
+        run: |
+          npm run licenses
+          node scripts/package-experimental.cjs
+      - name: Upload UNTESTED macOS package and provenance
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: Grok-Workbench-macOS-${{ matrix.arch }}-UNTESTED-${{ github.sha }}
+          path: |
+            release/*-UNTESTED.zip
+            release/*-UNTESTED.zip.sha256
+            release/*-UNTESTED.zip.manifest.json
+            release/EXPERIMENTAL-PLATFORMS.txt
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 7
