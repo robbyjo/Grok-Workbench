@@ -17,7 +17,9 @@ module.exports = {
     { from: 'resources/EXPERIMENTAL-PLATFORMS.txt', to: 'EXPERIMENTAL-PLATFORMS.txt' },
   ],
   linux: {
-    target: ['AppImage', 'deb'],
+    // The AppImage launcher can silently add --no-sandbox on restricted hosts.
+    // Debian and plain archives retain Electron's normal sandbox startup policy.
+    target: ['deb', 'tar.gz'],
     category: 'Development',
     executableName: 'grok-workbench',
     maintainer: 'Grok Workbench contributors',

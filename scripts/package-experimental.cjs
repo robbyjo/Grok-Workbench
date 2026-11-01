@@ -51,7 +51,7 @@ const source = cp.execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' 
 for (const name of fs
   .readdirSync('release')
   .filter(
-    (name) => name.startsWith(`Grok-Workbench-${version}-`) && /\.(zip|AppImage|deb)$/.test(name),
+    (name) => name.startsWith(`Grok-Workbench-${version}-`) && /\.(zip|tar\.gz|deb)$/.test(name),
   )) {
   const file = path.join('release', name),
     sha256 = digest(file);
