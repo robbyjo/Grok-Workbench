@@ -1,3 +1,4 @@
+import { t } from '../shared/i18n';
 import { Circle, ShieldCheck } from 'lucide-react';
 import type { Thread, Wire } from '../shared/types';
 import { savedPermissionMode, permissionModeDescriptions } from '../shared/permissions';
@@ -22,7 +23,7 @@ export default function ConfigControls({
       {!thread.session?.connected &&
         !['running', 'approval', 'connecting'].includes(thread.status) && (
           <button onClick={() => void action('agent:connect', { id: thread.id })}>
-            Connect to refresh model choices
+            {t('Connect to refresh model choices')}
           </button>
         )}
       {configs.length ? (
@@ -105,11 +106,11 @@ export default function ConfigControls({
               Grok default
             </option>
           )}
-          <option value="ask">Always ask</option>
+          <option value="ask">{t('Always ask')}</option>
           <option value="auto" disabled={thread.session?.autoPermissionModeEnabled === false}>
-            Approve for me
+            {t('Approve for me')}
           </option>
-          <option value="always-approve">Approve all</option>
+          <option value="always-approve">{t('Approve all')}</option>
         </select>
       </label>
       {permissionMode === 'auto' && thread.session?.autoPermissionModeEnabled === false && (

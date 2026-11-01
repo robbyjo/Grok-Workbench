@@ -1,5 +1,10 @@
 import ConfigControls from './ConfigControls';
 import SettingsTabs from './SettingsTabs';
+import BackgroundSettings from './BackgroundSettings';
+import RemoteSettings from './RemoteSettings';
+import ProviderSettings from './ProviderSettings';
+import { t, setLanguage } from '../shared/i18n';
+import '../shared/translations';
 import PermissionSettings from './PermissionSettings';
 import UpdateSettings from './UpdateSettings';
 import { version } from '../package.json';
@@ -108,7 +113,7 @@ function Activity({ entry }: { entry: Thread['entries'][number] }) {
       <details className="activity thought">
         <summary>
           <Circle size={12} />
-          Reasoning
+          {t('Reasoning')}
         </summary>
         <div className="markdown">
           <Markdown text={entry.text} />
@@ -176,13 +181,50 @@ function Activity({ entry }: { entry: Thread['entries'][number] }) {
 export default function App() {
   useAccessibleDialogs();
   const [state, setState] = useState<State>(initial);
-  const appearance = readAppearance(state.settings.appearance);
+  const configuredAppearance = readAppearance(state.settings.appearance);
+  const [systemLight, setSystemLight] = useState(
+    () => matchMedia('(prefers-color-scheme: light)').matches,
+  );
+  useEffect(() => {
+    const query = matchMedia('(prefers-color-scheme: light)');
+    const change = () => setSystemLight(query.matches);
+    query.addEventListener('change', change);
+    return () => query.removeEventListener('change', change);
+  }, []);
+  const appearance = {
+    ...configuredAppearance,
+    theme: configuredAppearance.followSystem
+      ? ((systemLight ? 'light' : 'dark') as 'light' | 'dark')
+      : configuredAppearance.theme,
+  };
+  setLanguage(state.settings.language);
   useLayoutEffect(() => {
     const root = document.documentElement;
     root.dataset.theme = appearance.theme;
+    root.lang = state.settings.language ?? 'en';
+    root.dataset.accent = appearance.accent ?? 'green';
+    root.dataset.density = appearance.density ?? 'comfortable';
+    root.dataset.motion = appearance.motion ?? 'system';
+    root.style.setProperty(
+      '--interface-font',
+      appearance.font === 'arial'
+        ? 'Arial, sans-serif'
+        : appearance.font === 'georgia'
+          ? 'Georgia, serif'
+          : "Inter, 'Segoe UI', sans-serif",
+    );
     root.style.setProperty('--ui-font-scale', String(appearance.uiScale / 100));
     root.style.setProperty('--log-font-size', `${appearance.logFontSize}px`);
-  }, [appearance.theme, appearance.uiScale, appearance.logFontSize]);
+  }, [
+    appearance.theme,
+    appearance.uiScale,
+    appearance.logFontSize,
+    appearance.accent,
+    appearance.density,
+    appearance.motion,
+    appearance.font,
+    state.settings.language,
+  ]);
   const [activeId, setActiveId] = useState<string>();
   const [projectId, setProjectId] = useState<string>();
   const [search, setSearch] = useState(false);
@@ -598,14 +640,16 @@ export default function App() {
         </div>
         <button className="new-chat" disabled={project?.hidden} onClick={() => void newChat()}>
           <Plus size={17} />
-          New chat<kbd>Ctrl N</kbd>
+          {t('New chat')}
+          <kbd>Ctrl N</kbd>
         </button>
-        <button className="search" aria-label="Search chats" onClick={() => setSearch(true)}>
+        <button className="search" aria-label={t('Search chats')} onClick={() => setSearch(true)}>
           <Search size={14} />
-          Search chats<kbd>Ctrl Shift F</kbd>
+          {t('Search chats')}
+          <kbd>Ctrl Shift F</kbd>
         </button>
         <div className="section-heading">
-          <span>PROJECTS</span>
+          <span>{t('Projects').toLocaleUpperCase(state.settings.language ?? 'en')}</span>
           <button
             className="icon-button"
             aria-label="Organize projects and chats"
@@ -694,7 +738,11 @@ export default function App() {
           )}
         </div>
         <div className="section-heading">
-          <span>{archived ? 'ARCHIVED CHATS' : 'CHATS'}</span>
+          <span>
+            {t(archived ? 'Archived chats' : 'Chats').toLocaleUpperCase(
+              state.settings.language ?? 'en',
+            )}
+          </span>
           <button
             className={`icon-button ${archived ? 'active' : ''}`}
             aria-label="Toggle archived chats"
@@ -763,12 +811,13 @@ export default function App() {
           <div className="local-machine">
             <span className="status-dot idle" />
             <span>
-              Local machine<small>Windows · local workflows</small>
+              {t('Local machine')}
+              <small>{t('Windows · local workflows')}</small>
             </span>
           </div>
           <AccountControl state={state} />
           <button
-            aria-label="Settings"
+            aria-label={t('Settings')}
             className="settings-button"
             onClick={() => {
               setExecutable(state.settings.executable);
@@ -776,7 +825,8 @@ export default function App() {
             }}
           >
             <Settings2 size={16} />
-            Settings<kbd>Ctrl ,</kbd>
+            {t('Settings')}
+            <kbd>Ctrl ,</kbd>
           </button>
         </div>
       </aside>
@@ -797,7 +847,7 @@ export default function App() {
                   ) : (
                     <span className={`status-dot ${thread.status}`} />
                   )}{' '}
-                  {thread.status === 'idle' ? 'Ready' : thread.status}
+                  {t(thread.status === 'idle' ? 'Ready' : thread.status)}
                 </span>
                 <button
                   className="icon-button"
@@ -858,7 +908,7 @@ export default function App() {
             {thread && (
               <div className="workflow-toolbar">
                 <UsageIndicators thread={thread} />
-                <button onClick={() => setTasks(true)}>Tasks and queue</button>
+                <button onClick={() => setTasks(true)}>{t('Tasks and queue')}</button>
                 <button
                   onClick={() =>
                     void action('thread:read-state', {
@@ -868,7 +918,7 @@ export default function App() {
                     })
                   }
                 >
-                  {thread.readState?.firstUnread ? 'Mark read' : 'Mark unread'}
+                  {t(thread.readState?.firstUnread ? 'Mark read' : 'Mark unread')}
                 </button>
                 {thread.readState?.firstUnread &&
                   thread.readState.firstUnread !== 'threadStart' && (
@@ -888,11 +938,11 @@ export default function App() {
                         })
                       }
                     >
-                      First unread result
+                      {t('First unread result')}
                     </button>
                   )}
                 <button onClick={() => void action('history:export', { id: thread.id })}>
-                  Export chat
+                  {t('Export chat')}
                 </button>
               </div>
             )}
@@ -960,7 +1010,7 @@ export default function App() {
                 <div className="welcome">
                   <div className="welcome-symbol">/</div>
                   <div className="eyebrow">YOUR LOCAL CODING WORKSPACE</div>
-                  <h1>What are we building?</h1>
+                  <h1>{t('What are we building?')}</h1>
                   <p>
                     Bring a project. Start a conversation.
                     <br />
@@ -1114,7 +1164,7 @@ export default function App() {
                         void action('permission:answer', { permissionId: permission.id })
                       }
                     >
-                      Cancel
+                      {t('Cancel')}
                     </button>
                   </div>
                 </div>
@@ -1221,7 +1271,7 @@ export default function App() {
                     }}
                     placeholder={
                       project
-                        ? 'Ask Grok to build, explore, or fix something…'
+                        ? t('Ask Grok to build, explore, or fix something…')
                         : 'Open a project to get started…'
                     }
                     value={draft}
@@ -1243,8 +1293,8 @@ export default function App() {
                     <div className="composer-options">
                       <button
                         className="icon-button"
-                        title="Attach files"
-                        aria-label="Attach files"
+                        title={t('Attach files')}
+                        aria-label={t('Attach files')}
                         disabled={busy}
                         onClick={async () => {
                           const items = await action('attachments:pick');
@@ -1259,7 +1309,7 @@ export default function App() {
                       </button>
                       {thread && (
                         <button disabled={busy} onClick={() => setMediaOpen(true)}>
-                          Media
+                          {t('Media')}
                         </button>
                       )}
                       {thread ? (
@@ -1287,8 +1337,8 @@ export default function App() {
                         </button>
                         <button
                           className="send stop"
-                          aria-label="Stop turn"
-                          title="Stop turn"
+                          aria-label={t('Stop turn')}
+                          title={t('Stop turn')}
                           onClick={() => void action('agent:cancel', { id: thread.id })}
                         >
                           <Square size={14} />
@@ -1364,14 +1414,15 @@ export default function App() {
                   }}
                 >
                   <GitCompareArrows size={15} />
-                  Changes{count > 0 && <span>{count}</span>}
+                  {t('Changes')}
+                  {count > 0 && <span>{count}</span>}
                 </button>
                 <button
                   className={tab === 'files' ? 'selected' : ''}
                   onClick={() => setTab('files')}
                 >
                   <Folder size={15} />
-                  Files
+                  {t('Files')}
                 </button>
                 <button
                   className="icon-button"
@@ -1454,7 +1505,8 @@ export default function App() {
               <div className="inspector-footer">
                 <ShieldCheck size={14} />
                 <span>
-                  Permissions apply.<small>Windows OS sandbox unavailable.</small>
+                  {t('Permissions apply.')}
+                  <small>{t('Windows OS sandbox unavailable.')}</small>
                 </span>
               </div>
             </aside>
@@ -1488,17 +1540,17 @@ export default function App() {
             className="modal settings-modal"
             role="dialog"
             aria-modal="true"
-            aria-label="Settings"
+            aria-label={t('Settings')}
             onClick={(event) => event.stopPropagation()}
           >
             <div className="modal-header">
               <div>
                 <span className="eyebrow">GROK WORKBENCH</span>
-                <h2>Settings</h2>
+                <h2>{t('Settings')}</h2>
               </div>
               <button
                 className="icon-button"
-                aria-label="Close settings"
+                aria-label={t('Close settings')}
                 onClick={() => closeSettings()}
               >
                 <X size={18} />
@@ -1508,7 +1560,7 @@ export default function App() {
               tabs={[
                 {
                   id: 'general',
-                  name: 'General',
+                  name: t('General'),
                   content: (
                     <>
                       <h3>Grok engine</h3>
@@ -1533,7 +1585,7 @@ export default function App() {
                             if (path) setExecutable(path);
                           }}
                         >
-                          Browse
+                          {t('Browse')}
                         </button>
                       </div>
                       <small>
@@ -1576,7 +1628,7 @@ export default function App() {
                           if (result) closeSettings();
                         }}
                       >
-                        Save settings
+                        {t('Save settings')}
                       </button>
                       <DesktopPreferences state={state} section="general" />
                     </>
@@ -1584,12 +1636,36 @@ export default function App() {
                 },
                 {
                   id: 'appearance',
-                  name: 'Appearance',
+                  name: t('Appearance'),
                   content: <AppearanceSettings state={state} />,
                 },
                 {
+                  id: 'automations',
+                  name: t('Automations & PR watches'),
+                  content: (
+                    <BackgroundSettings
+                      state={state}
+                      thread={thread}
+                      select={(id) => {
+                        setActiveId(id);
+                        closeSettings();
+                      }}
+                    />
+                  ),
+                },
+                {
+                  id: 'remote',
+                  name: t('Remote access'),
+                  content: <RemoteSettings state={state} />,
+                },
+                {
+                  id: 'providers',
+                  name: t('Providers'),
+                  content: <ProviderSettings thread={thread} />,
+                },
+                {
                   id: 'models',
-                  name: 'Models & permissions',
+                  name: t('Models & permissions'),
                   content: (
                     <>
                       <h3>Model and reasoning</h3>
@@ -1623,7 +1699,7 @@ export default function App() {
                 },
                 {
                   id: 'account',
-                  name: 'Account',
+                  name: t('Account'),
                   content: (
                     <AuthenticationSettings
                       state={state}
@@ -1634,7 +1710,7 @@ export default function App() {
                 },
                 {
                   id: 'integrations',
-                  name: 'Integrations',
+                  name: t('Integrations'),
                   content: (
                     <>
                       <McpSettings thread={thread} />
@@ -1644,14 +1720,14 @@ export default function App() {
                 },
                 {
                   id: 'configuration',
-                  name: 'Configuration',
+                  name: t('Configuration'),
                   content: (
                     <ConfigurationEditor thread={thread} dirtyChanged={setConfigurationDirty} />
                   ),
                 },
                 {
                   id: 'projects',
-                  name: 'Projects & sessions',
+                  name: t('Projects & sessions'),
                   content: (
                     <>
                       {!thread && (
@@ -1686,22 +1762,22 @@ export default function App() {
                 },
                 {
                   id: 'shortcuts',
-                  name: 'Keyboard shortcuts',
+                  name: t('Keyboard shortcuts'),
                   content: <DesktopPreferences state={state} section="shortcuts" />,
                 },
                 {
                   id: 'storage',
-                  name: 'Storage & diagnostics',
+                  name: t('Storage & diagnostics'),
                   content: <DesktopPreferences state={state} section="storage" />,
                 },
-                { id: 'updates', name: 'Updates', content: <UpdateSettings /> },
+                { id: 'updates', name: t('Updates'), content: <UpdateSettings /> },
               ]}
             />
             <div className="settings-footer">
               <small className="muted">
                 Grok Workbench {version} · Independent client · Windows first
               </small>
-              <button onClick={() => closeSettings()}>Done</button>
+              <button onClick={() => closeSettings()}>{t('Done')}</button>
             </div>
           </section>
         </div>
@@ -1748,7 +1824,7 @@ export default function App() {
               Use an existing local branch
             </label>
             <div className="modal-actions">
-              <button onClick={() => setWorktree(false)}>Cancel</button>
+              <button onClick={() => setWorktree(false)}>{t('Cancel')}</button>
               <button
                 className="primary"
                 onClick={async () => {
@@ -1780,7 +1856,7 @@ export default function App() {
               onChange={(event) => setTitle(event.target.value)}
             />
             <div className="modal-actions">
-              <button onClick={() => setRename(false)}>Cancel</button>
+              <button onClick={() => setRename(false)}>{t('Cancel')}</button>
               <button
                 className="primary"
                 onClick={async () => {
@@ -1788,7 +1864,7 @@ export default function App() {
                   setRename(false);
                 }}
               >
-                Save
+                {t('Save')}
               </button>
             </div>
           </section>

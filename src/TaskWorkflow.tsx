@@ -1,3 +1,4 @@
+import { t } from '../shared/i18n';
 import { useEffect, useState } from 'react';
 import type { Thread, Wire } from '../shared/types';
 export default function TaskWorkflow({
@@ -60,7 +61,7 @@ export default function TaskWorkflow({
             }
         }}
       >
-        Task → test → review
+        {t('Task → test → review')}
       </button>
       {open && (
         <div>

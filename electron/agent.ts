@@ -49,6 +49,7 @@ export class Agents {
   canStart = () => true;
   canConnect = () => true;
   beforeWork = async () => {};
+  beforePrompt = async (_id: string) => {};
   private draining = new Set<string>();
   private connections = new Map<string, Connection>();
   private connecting = new Map<string, Promise<Wire>>();
@@ -60,22 +61,22 @@ export class Agents {
   constructor(
     private store: Store,
     private emit: (event: DesktopEvent) => void,
-    private launch: (cwd: string) => RpcClient = (cwd) =>
+    private launch: (cwd: string, id?: string) => RpcClient = (cwd, id) =>
       store.state.settings.executable === 'embedded'
         ? new (require('./embedded-rpc').EmbeddedRpc)(
             embeddedEngine(),
             cwd,
-            this.environment(),
-            store.state.settings.authMode ?? 'auto',
+            this.environment(id),
+            id && store.thread(id).providerId ? 'auto' : (store.state.settings.authMode ?? 'auto'),
           )
         : new RpcProcess(
             runtimeExecutable(store.state.settings.executable),
             ['agent', '--no-leader', 'stdio'],
             cwd,
-            this.environment(),
+            this.environment(id),
           ),
   ) {}
-  environment = () => process.env;
+  environment: (id?: string) => NodeJS.ProcessEnv = () => process.env;
   hasConnection(id: string) {
     return this.connections.has(id);
   }
@@ -107,7 +108,7 @@ export class Agents {
     const thread = this.store.thread(id);
     thread.usage = undefined;
     thread.runtimeStatus = undefined;
-    const connection: Connection = { rpc: this.launch(thread.cwd), loading: false };
+    const connection: Connection = { rpc: this.launch(thread.cwd, id), loading: false };
     this.connections.set(id, connection);
     connection.rpc.on('notification', (message: Wire) => {
       if (['_x.ai/settings/update', 'x.ai/settings/update'].includes(message.method)) {
@@ -384,6 +385,9 @@ export class Agents {
       throw new Error('This chat is busy. Stop its turn before sending another prompt.');
     await this.connect(id);
     if (thread.status !== 'idle') throw new Error('Chat is not ready.');
+    await this.beforePrompt(id);
+    if (!this.canStart()) throw new Error('Wait for the workspace or configuration operation.');
+    if (thread.status !== 'idle') throw new Error('Chat is no longer ready.');
     const connection = this.connections.get(id)!;
     const turn = randomUUID();
     connection.turn = turn;

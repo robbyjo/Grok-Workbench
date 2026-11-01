@@ -5,7 +5,11 @@ const notices = [
   'Production and bundled renderer dependency license notices for Grok Workbench\nGenerated from the installed package-lock.json graph.\n',
 ];
 for (const [location, info] of Object.entries(lock.packages)) {
-  if (!location || (info.dev && location !== 'node_modules/monaco-editor')) continue;
+  if (
+    !location ||
+    (info.dev && !['node_modules/monaco-editor', 'node_modules/pdfjs-dist'].includes(location))
+  )
+    continue;
   const directory = path.resolve(location);
   if (!fs.existsSync(directory)) continue; // Other-platform optional binaries are not shipped here.
   const meta = JSON.parse(fs.readFileSync(path.join(directory, 'package.json'), 'utf8'));

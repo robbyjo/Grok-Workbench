@@ -19,6 +19,12 @@ Grok Workbench embeds xai-org/grok-build at revision
   `native/studio-engine/patches` reproduce these changes.
 - Windows configuration locking retries `ERROR_LOCK_VIOLATION` (33) as lock
   contention, using the existing bounded retry. It never writes without the lock.
+- The MCP transport's separate reqwest 0.13 dependency enables gzip, Brotli,
+  deflate and Zstandard response decoding. The workspace's reqwest 0.12 features
+  do not propagate across those versions. This targeted compatibility backport
+  keeps the source revision and storage contract unchanged; an embedded-engine
+  regression exercises compressed MCP initialization/tool discovery and corrupt
+  gzip refusal against disposable local servers.
 
 The Studio binding and process bridge are additional source, not upstream changes.
 Cargo.lock pins pdf_oxide 0.3.43 and process-wrap 9.0.0 to the upstream declared

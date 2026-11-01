@@ -1,3 +1,4 @@
+import { t } from '../shared/i18n';
 import { useState } from 'react';
 import type { State, Wire } from '../shared/types';
 export default function Organization({
@@ -34,10 +35,10 @@ export default function Organization({
       >
         <div className="modal-header">
           <h2>Organize projects and chats</h2>
-          <button onClick={close}>Close</button>
+          <button onClick={close}>{t('Close')}</button>
         </div>
         {error && <p role="alert">{error}</p>}
-        <h3>Projects</h3>
+        <h3>{t('Projects')}</h3>
         <div className="input-row">
           <input
             aria-label="Project group name"
@@ -118,7 +119,7 @@ export default function Organization({
               </button>
             </div>
           ))}
-        <h3>Chats</h3>
+        <h3>{t('Chats')}</h3>
         <div className="input-row">
           <button
             disabled={!chats.length}

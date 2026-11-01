@@ -1,5 +1,5 @@
 :root {
-  font-family: Inter, 'Segoe UI', sans-serif;
+  font-family: var(--interface-font, Inter, 'Segoe UI', sans-serif);
   font-size: calc(16px * var(--ui-font-scale));
   font-synthesis: none;
   font-weight: 400;
@@ -2222,4 +2222,182 @@ pre,
   .turn-edit-versions {
     grid-template-columns: 1fr;
   }
+}
+:root[data-accent='blue'] {
+  --accent-text: #a9cfff;
+  --accent-solid: #b7d6ff;
+  --accent-bg: #24364b;
+  --accent-border: #6c91be;
+  --on-accent: #152539;
+}
+:root[data-accent='purple'] {
+  --accent-text: #d4bfff;
+  --accent-solid: #d4bfff;
+  --accent-bg: #342944;
+  --accent-border: #9a7cbd;
+  --on-accent: #241833;
+}
+:root[data-accent='amber'] {
+  --accent-text: #f1d3a0;
+  --accent-solid: #f1d3a0;
+  --accent-bg: #3c3223;
+  --accent-border: #a68d63;
+  --on-accent: #2e2312;
+}
+:root[data-theme='light'][data-accent='blue'] {
+  --accent-text: #245c9c;
+  --accent-solid: #245c9c;
+  --accent-bg: #e6f0fc;
+  --accent-border: #6e94c0;
+  --on-accent: #fff;
+}
+:root[data-theme='light'][data-accent='purple'] {
+  --accent-text: #6c3998;
+  --accent-solid: #6c3998;
+  --accent-bg: #f0e8f8;
+  --accent-border: #aa89c4;
+  --on-accent: #fff;
+}
+:root[data-theme='light'][data-accent='amber'] {
+  --accent-text: #785500;
+  --accent-solid: #785500;
+  --accent-bg: #fff4d6;
+  --accent-border: #b69a50;
+  --on-accent: #fff;
+}
+:root[data-density='compact'] .chat-row {
+  min-height: 28px;
+  padding-block: 3px;
+}
+:root[data-density='compact'] .project-heading {
+  padding-block: 3px;
+}
+:root[data-density='compact'] .message {
+  padding-block: 10px;
+}
+:root[data-motion='reduce'] *,
+:root[data-motion='reduce'] *::before,
+:root[data-motion='reduce'] *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+.feature-settings {
+  display: grid;
+  gap: 14px;
+  max-width: 850px;
+}
+.feature-settings button,
+.document-preview button,
+.workspace-files > details button {
+  min-height: 34px;
+  padding: 7px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+.feature-settings button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.feature-settings button:hover:not(:disabled),
+.document-preview button:hover:not(:disabled) {
+  background: var(--surface-3);
+}
+.feature-settings button:focus-visible,
+.document-preview button:focus-visible {
+  outline: 2px solid var(--accent-text);
+  outline-offset: 2px;
+}
+.feature-settings form,
+.feature-settings fieldset {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+.feature-settings label:not(.check-row) {
+  display: grid;
+  gap: 6px;
+}
+.feature-settings textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+.feature-settings .check-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  line-height: 1.5;
+}
+.feature-settings .check-row input {
+  width: auto;
+  margin-top: 5px;
+  flex: none;
+}
+.feature-settings p,
+.feature-settings code {
+  overflow-wrap: anywhere;
+}
+.feature-settings pre {
+  max-height: 300px;
+  overflow: auto;
+  white-space: pre-wrap;
+}
+.feature-list {
+  display: grid;
+  gap: 12px;
+}
+.feature-list article {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+  min-width: 0;
+}
+.feature-list article p {
+  margin-block: 6px;
+}
+.document-preview {
+  padding: 12px;
+  overflow: auto;
+  max-height: 70vh;
+}
+.document-preview img,
+.document-preview video,
+.document-preview canvas {
+  max-width: 100%;
+  height: auto;
+}
+.document-preview audio {
+  width: 100%;
+}
+.document-preview p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.document-preview pre {
+  white-space: pre-wrap;
+}
+.preview-table {
+  overflow: auto;
+  max-height: 420px;
+}
+.preview-table table {
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.preview-table td,
+.preview-table th {
+  border: 1px solid var(--line);
+  padding: 5px 9px;
+  min-width: 65px;
+  max-width: 300px;
+  overflow-wrap: anywhere;
+}
+.preview-table th {
+  position: sticky;
+  left: 0;
+  background: var(--surface-1);
 }

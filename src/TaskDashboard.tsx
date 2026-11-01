@@ -1,3 +1,4 @@
+import { t } from '../shared/i18n';
 import { useEffect, useRef, useState } from 'react';
 import type { Thread, Wire } from '../shared/types';
 export function UsageIndicators({ thread }: { thread: Thread }) {
@@ -79,7 +80,7 @@ export default function TaskDashboard({ thread, close }: { thread: Thread; close
       >
         <div className="modal-header">
           <h2>Tasks and queued prompts</h2>
-          <button onClick={close}>Close</button>
+          <button onClick={close}>{t('Close')}</button>
         </div>
         <div className="input-row">
           <button disabled={busy} onClick={() => void refresh()}>
@@ -165,7 +166,7 @@ export default function TaskDashboard({ thread, close }: { thread: Thread; close
                     .catch((e) => setError(String(e)));
               }}
             >
-              Edit
+              {t('Edit')}
             </button>
             <button
               onClick={() =>
@@ -174,7 +175,7 @@ export default function TaskDashboard({ thread, close }: { thread: Thread; close
                   .catch((e) => setError(String(e)))
               }
             >
-              Remove
+              {t('Remove')}
             </button>
           </div>
         ))}

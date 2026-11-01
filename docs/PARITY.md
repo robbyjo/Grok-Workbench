@@ -1,6 +1,8 @@
 # Local workflow parity audit
 
-Release scope snapshot: October 29, 2026 (America/New_York); **Grok Workbench 0.8.4** with embedded Grok Build source `2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8` (library 1.0.45). Full local workflow parity is not achieved. Local workflows come first; remote hosts and automations remain deferred by user choice.
+Release scope snapshot: October 29, 2026 (America/New_York); **Grok Workbench 0.8.4** with embedded Grok Build source `2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8` (library 1.0.45). Full local workflow parity is not achieved. The October 31 unreleased source now adds local scheduling and paired remote access; agent execution on remote hosts remains future work.
+
+**October 31 extended workbench (unreleased):** local interval/daily/one-time schedules and run recovery; GitHub PR polling with bounded opt-in continuation; scoped bearer-authenticated loopback mobile/REST access; encrypted/session-only native model provider profiles; local PDF and inert Office/Markdown/media previews; a sandboxed temporary browser preview; six-language navigation/common controls and personalization. Detailed delivered scope and acceptance boundaries are in [EXTENDED-WORKBENCH.md](EXTENDED-WORKBENCH.md). External tunnels/devices, hosted provider matrices, live PR lifecycle, full-interface translation and packaged-release acceptance remain distinct open gates. The published 0.8.4 assets are unchanged.
 
 Version **0.8.1** adds saved UI/log font sizing and light/dark themes, including live terminal/editor updates, and fixes the client side of the engine's “don't ask again” option with per-chat persistence and explicit revocation. Nine source and nine packaged GUI scenarios, backend acceptance and the real portable lifecycle gates pass in [Windows CI](https://github.com/robbyjo/Grok-Workbench/actions/runs/39501321274). Approval semantics use protocol-fixture validation, not a live model/tool approval claim.
 
@@ -60,3 +62,26 @@ The backend exposes finite native extensions and validates owned-task IDs. Catal
 Git, save, rewind and apply checks detect stale reviews; they are not cross-process filesystem locks. Hooks/tools/actions run as the current Windows user. Recoverable archive writes its Git snapshot before removing the checkout. Authentication is owned by Grok; cross-machine credential transfer is never automatic.
 
 Source basis: [pinned Grok source](https://github.com/xai-org/grok-build/tree/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8), [GitHub provider OAuth](https://github.com/github/github-mcp-server/blob/v2.0.1/docs/oauth-login.md), and original project workflow references retained in historical validation records.
+
+## macOS and Linux feasibility (October 31, 2026)
+
+Source review indicates that both ports are practical with the current embedded engine. Electron/React, the Rust/N-API binding and most workspace features can be shared. The installed PTY dependency declares prebuilt packages for macOS and Linux on x64 and arm64. No macOS/Linux native build, package or runtime acceptance is claimed by this assessment.
+
+Prefer native build/test runners for each target. [Electron Builder documents the native-dependency and macOS-signing constraints](https://www.electron.build/v26/docs/features/multi-platform-build/); the complete app cannot currently be produced from Windows by adding a packaging flag. Linux cross-build tooling is an option, but does not replace target-OS runtime tests. macOS signing/notarization requires a macOS environment and the publisher's Apple enrollment/credentials ([Electron guidance](https://www.electronjs.org/docs/latest/tutorial/code-signing)).
+
+| Initial target      | Build/test host                              | Candidate distribution        |
+| ------------------- | -------------------------------------------- | ----------------------------- |
+| Linux x64           | Linux x64                                    | AppImage and/or deb           |
+| macOS Apple Silicon | macOS arm64                                  | dmg and zip                   |
+| macOS Intel         | macOS x64                                    | Separate dmg and zip          |
+| Linux arm64         | Linux arm64, after the first desktop targets | Separate architecture package |
+
+Required work before declaring support:
+
+- **Native artifacts:** parameterize the Windows-x64-only engine/protoc build, copy each target's library as the N-API addon, and validate target-specific metadata/checksums. Separate the Windows updater launcher/MSVC payload from other packages. Preserve the source pin and storage contract while testing each OS/architecture.
+- **OS integration:** correct Windows shell/action defaults and terminal restoration, test Cmd shortcuts on macOS, and verify child-process cleanup, filesystem watches and case-sensitive paths. The backend already has a POSIX default-shell branch, but the renderer seeds a PowerShell terminal row.
+- **Credentials and profiles:** validate macOS Keychain and Linux secret-service storage; explicitly refuse Linux `basic_text` as remembered encrypted storage and retain session-only use when a keyring is unavailable ([Electron storage semantics](https://www.electronjs.org/docs/latest/api/safe-storage/)). Define private per-app Grok homes and preserve explicit user overrides. Existing Windows-encrypted API keys are not portable credentials.
+- **Updates and retention:** replace or disable the PE/Authenticode/PowerShell portable updater on other systems. Native session leases currently return without locking on non-Windows; implement POSIX coordination or disable native pruning/migration there until verified. Windows Sandbox preparation is a Windows-only feature.
+- **Acceptance:** build the actual native addon on each runner, then exercise source and packaged GUI, PTY/child cleanup, clipboard/file drops, OAuth/API-key recovery, MCP, Git, session resume and profile preservation. Start with manual package updates; test platform update/rollback separately before enabling it.
+
+The recommended first milestone is a Linux x64 and macOS arm64 native CI proof, with manual updates and unsupported Windows-specific controls hidden. Add Intel macOS and Linux arm64 after their own native acceptance; a universal Mac package can follow once both architecture-specific addons pass.

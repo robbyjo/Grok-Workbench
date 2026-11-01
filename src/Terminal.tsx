@@ -3,6 +3,12 @@ import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import '@xterm/xterm/css/xterm.css';
 import { terminalTheme, useAppearance } from './appearance';
+const fontFamily = (choice?: string) =>
+  choice === 'consolas'
+    ? 'Consolas, monospace'
+    : choice === 'courier'
+      ? 'Courier New, monospace'
+      : 'Cascadia Code, Consolas, monospace';
 function TerminalSurface({
   id,
   terminalId,
@@ -17,7 +23,7 @@ function TerminalSurface({
   const surface = useRef<{ terminal: Terminal; resize: () => void } | undefined>(undefined);
   useEffect(() => {
     const terminal = new Terminal({
-      fontFamily: 'Cascadia Code, Consolas, monospace',
+      fontFamily: fontFamily(appearance.terminalFont),
       fontSize: appearance.logFontSize,
       cursorBlink: true,
       scrollback: 5000,
@@ -79,8 +85,9 @@ function TerminalSurface({
     if (!surface.current) return;
     surface.current.terminal.options.fontSize = appearance.logFontSize;
     surface.current.terminal.options.theme = terminalTheme(appearance.theme);
+    surface.current.terminal.options.fontFamily = fontFamily(appearance.terminalFont);
     surface.current.resize();
-  }, [appearance.logFontSize, appearance.theme]);
+  }, [appearance.logFontSize, appearance.theme, appearance.terminalFont]);
   return <div className="terminal-surface" ref={element} />;
 }
 export default function TerminalPanel({

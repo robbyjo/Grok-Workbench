@@ -1,8 +1,10 @@
 # Grok Workbench
 
-A Windows-first desktop application with **Grok Build built in**, supporting Grok account OAuth and xAI API keys. The target is comparable local coding workflows to Codex wherever Grok supports them. This is an independent Apache-2.0 project; full workflow parity is still being developed.
+A Windows-first desktop graphical user interface (GUI) with **Grok Build built in**, supporting Grok account OAuth and xAI API keys. The target is comparable local coding workflows to Codex wherever Grok supports them. This is an independent Apache-2.0 project; full workflow parity is still being developed.
 
 **0.8.4 alpha · Windows 10/11 x64 · portable executable.** macOS, Linux and ARM64 are future targets. See [TODO.md](TODO.md), the [parity audit](docs/PARITY.md), and [validation evidence](docs/VALIDATION.md).
+
+**Unreleased source additions:** scheduled automations, PR monitoring with optional automatic continuation, paired mobile/REST access, native provider profiles, local PDF/Office/Markdown/media previews, an isolated website preview browser, six-language navigation/common controls and expanded appearance preferences. These are not included in the public 0.8.4 download. See [setup, scope and acceptance limits](docs/EXTENDED-WORKBENCH.md).
 
 [Project website and quick-start tutorial](https://robbyjo.github.io/Grok-Workbench/) · [Website source and hosting instructions](docs/WEBSITE.md)
 

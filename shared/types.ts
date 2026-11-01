@@ -43,6 +43,7 @@ export interface Entry {
   turn?: string;
 }
 export interface Thread {
+  providerId?: string;
   readState?: { revision: string; firstUnread?: string };
   id: string;
   projectId: string;
@@ -77,6 +78,7 @@ export interface Thread {
   }>;
 }
 export interface Settings {
+  language?: import('./i18n').Language;
   executable: string;
   defaultPermissionMode?: import('./permissions').PermissionMode;
   appearance?: import('./appearance').Appearance;
@@ -138,6 +140,7 @@ export interface TextDocument {
   revision: string;
 }
 export type DesktopEvent =
+  | { type: 'background-changed' }
   | { type: 'question'; question: UserQuestion }
   | { type: 'question-closed'; id: string }
   | { type: 'files-changed'; id: string }

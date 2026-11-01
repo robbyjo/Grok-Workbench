@@ -1,3 +1,4 @@
+import { t } from '../shared/i18n';
 import { useEffect, useRef, useState } from 'react';
 import { Search, X } from 'lucide-react';
 import type { SearchHit, SearchResults } from '../shared/types';
@@ -50,7 +51,7 @@ export default function ChatSearch({
       <section
         className="modal chat-search"
         role="dialog"
-        aria-label="Search chats"
+        aria-label={t('Search chats')}
         aria-modal="true"
         onClick={(event) => event.stopPropagation()}
         onKeyDown={(event) => {
@@ -58,7 +59,7 @@ export default function ChatSearch({
         }}
       >
         <div className="modal-header">
-          <h2>Search chats</h2>
+          <h2>{t('Search chats')}</h2>
           <button className="icon-button" aria-label="Close search" onClick={close}>
             <X size={18} />
           </button>

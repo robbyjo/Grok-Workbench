@@ -1,3 +1,4 @@
+import { t } from '../shared/i18n';
 import { useEffect, useState } from 'react';
 import type { Thread, Wire } from '../shared/types';
 export default function ProjectActions({ thread }: { thread?: Thread }) {
@@ -98,7 +99,7 @@ export default function ProjectActions({ thread }: { thread?: Thread }) {
           >
             Run reviewed action
           </button>
-          <button onClick={() => setPreview(undefined)}>Cancel</button>
+          <button onClick={() => setPreview(undefined)}>{t('Cancel')}</button>
         </div>
       )}
       {catalog.runs.map((record: Wire) => (

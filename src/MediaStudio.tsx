@@ -1,8 +1,12 @@
+import { t } from '../shared/i18n';
 import { useEffect, useState } from 'react';
 import type { Thread, Wire } from '../shared/types';
+import DocumentPreview from './DocumentPreview';
 export function MediaPreview({ asset }: { asset: Wire }) {
   if (typeof asset.url !== 'string' || !/^grok-media:\/\/asset\/[a-f\d-]{36}$/.test(asset.url))
     return null;
+  if (asset.id && /\.(?:pdf|docx|xlsx|pptx|md)$/i.test(asset.name ?? ''))
+    return <DocumentPreview assetId={asset.id} />;
   if (asset.mimeType?.startsWith('image/'))
     return <img className="media-preview" src={asset.url} alt={asset.name} loading="lazy" />;
   if (asset.mimeType?.startsWith('audio/'))
@@ -69,12 +73,12 @@ export default function MediaStudio({
         className="modal settings-modal media-studio"
         role="dialog"
         aria-modal="true"
-        aria-label="Media studio"
+        aria-label={t('Media studio')}
       >
         <div className="modal-header">
-          <h2>Media studio</h2>
+          <h2>{t('Media studio')}</h2>
           <button disabled={busy} onClick={close}>
-            Close media studio
+            {t('Close media studio')}
           </button>
         </div>
         <p>
@@ -83,16 +87,16 @@ export default function MediaStudio({
           accepted request may still be billed.
         </p>
         <label className="field-label">
-          Media type
+          {t('Media type')}
           <select
-            aria-label="Media type"
+            aria-label={t('Media type')}
             disabled={busy}
             value={kind}
             onChange={(e) => setKind(e.target.value)}
           >
-            <option value="image">Image</option>
+            <option value="image">{t('Image')}</option>
             <option value="audio">Speech (text to audio)</option>
-            <option value="video">Video</option>
+            <option value="video">{t('Video')}</option>
           </select>
         </label>
         <label className="field-label">

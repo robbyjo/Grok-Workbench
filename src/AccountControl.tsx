@@ -1,3 +1,4 @@
+import { t } from '../shared/i18n';
 import { useEffect, useState } from 'react';
 import { UserRound, X } from 'lucide-react';
 import type { State, Wire } from '../shared/types';
@@ -55,7 +56,7 @@ export default function AccountControl({ state }: { state: State }) {
             className="modal account-modal"
             role="dialog"
             aria-modal="true"
-            aria-label="Account"
+            aria-label={t('Account')}
             onClick={(e) => e.stopPropagation()}
             onKeyDown={(e) => {
               if (e.key === 'Escape') {
@@ -65,7 +66,7 @@ export default function AccountControl({ state }: { state: State }) {
             }}
           >
             <div className="modal-header">
-              <h2>Account</h2>
+              <h2>{t('Account')}</h2>
               <button aria-label="Close account" onClick={() => setOpen(false)}>
                 <X size={18} />
               </button>

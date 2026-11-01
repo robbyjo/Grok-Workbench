@@ -1,3 +1,4 @@
+import { t } from '../shared/i18n';
 import { useEffect, useState } from 'react';
 import type { Thread, Wire } from '../shared/types';
 
@@ -89,7 +90,7 @@ export default function McpSettings({ thread }: { thread?: Thread }) {
               {server.enabled ? 'Disable' : 'Enable'} {server.name}
             </button>
             <button disabled={busy} onClick={() => setRemove(server.name)}>
-              Remove {server.name}
+              {t('Remove')} {server.name}
             </button>
           </div>
           {remove === server.name && (
@@ -172,7 +173,7 @@ export default function McpSettings({ thread }: { thread?: Thread }) {
               onChange={(event) => setScope(event.target.value)}
             >
               <option value="user">User</option>
-              <option value="project">Project</option>
+              <option value="project">{t('Project')}</option>
             </select>
           </label>
         </div>

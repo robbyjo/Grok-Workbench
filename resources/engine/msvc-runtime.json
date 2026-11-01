@@ -1,46 +1,46 @@
 {
-  "version": "14.50.35710",
+  "version": "14.52.37025",
   "architecture": "x64",
   "files": [
     {
       "name": "concrt140.dll",
-      "sha256": "b2faf3b85b23c840b654e57d5497a0ad31acd02fb01856cad4725a1715d5f78e"
+      "sha256": "7707c325b7cc7a238b6d49113415606095d34b71fd87d9bd0fa02c4996cf0a0e"
     },
     {
       "name": "msvcp140.dll",
-      "sha256": "def46aa6a8f72f27bafac0c43334419486a4d1dcdb6c479a8ef7034b3e1fa4cb"
+      "sha256": "dc1a23807996fa7876a73df67568e1d447e11c100bdcd55bd93c16102b342264"
     },
     {
       "name": "msvcp140_1.dll",
-      "sha256": "2dd670f874562fbdca5b022df1943d70a57ba91fde559280e3a1daebe4db2380"
+      "sha256": "bc62834072e3e2174924d486140e2dc4cac49f051122146a26373bcefc7404ee"
     },
     {
       "name": "msvcp140_2.dll",
-      "sha256": "1d60da3ac2b06482912ca852fa7047436e6e474b4cfffa3bf77f4598cfbf454c"
+      "sha256": "04f59ef26e5b13b0cacf3eb23b4cb31bb6eb6f82d488bb9621787f9fd291a95e"
     },
     {
       "name": "msvcp140_atomic_wait.dll",
-      "sha256": "e7963645e0d1db08e300614d4c5fa7194bd8173e9ab7a5558859e6b232ed3241"
+      "sha256": "060d73773fe26183a3ec3bc4dc2e3c0823d64699abb12a599f8a3793e16e968b"
     },
     {
       "name": "msvcp140_codecvt_ids.dll",
-      "sha256": "ae8d922b00cdd93e3ebecc37beb46c800f383ebdeb9f9e5b84e04a72428b6fb3"
+      "sha256": "a60dae421c4bc9f027a62096452082b42cc426ad3312c6ba4f3cf68ec9ab4032"
     },
     {
       "name": "vccorlib140.dll",
-      "sha256": "6b8d8a76c3e6664293407553650e60b94df9aaafc7c92057ea83032bd228e44f"
+      "sha256": "4a4730b1c8651824615496cd3567443a38ce0d5d6882c43169f0c5a99ec9aa83"
     },
     {
       "name": "vcruntime140.dll",
-      "sha256": "184146852727a9db4eea06178716bec3cdbb1015c911f6b0f915b184ad7775b2"
+      "sha256": "79fff492268d30dd8a9b0d36ad40f9fb1128fe9c94f3b1fb5059f31a38584055"
     },
     {
       "name": "vcruntime140_1.dll",
-      "sha256": "e6bfb3662ab4b1969a73441dbe35c96d51441b6bff8cf1fe7430bd5b246ca605"
+      "sha256": "6355ae86da8aa1ae02abd22dec90ef1cf84157eb208312380674dfe056912a47"
     },
     {
       "name": "vcruntime140_threads.dll",
-      "sha256": "a6222020b500a9a86b36e040c2dbd0e459716db1bf2810a11cd7512ea9b8d89b"
+      "sha256": "56c2245321016fb228ab344d453e043108bb666a0bb64464cb6f90e6be8faaf4"
     }
   ]
 }

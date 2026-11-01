@@ -1,3 +1,4 @@
+import { t } from '../shared/i18n';
 import { useState } from 'react';
 import type { State } from '../shared/types';
 import { permissionModeDescriptions } from '../shared/permissions';
@@ -21,9 +22,9 @@ export default function PermissionSettings({ state }: { state: State }) {
             setError('');
           }}
         >
-          <option value="ask">Always ask</option>
-          <option value="auto">Approve for me</option>
-          <option value="always-approve">Approve all</option>
+          <option value="ask">{t('Always ask')}</option>
+          <option value="auto">{t('Approve for me')}</option>
+          <option value="always-approve">{t('Approve all')}</option>
         </select>
       </label>
       <p className="muted">

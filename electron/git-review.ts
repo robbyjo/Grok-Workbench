@@ -206,7 +206,7 @@ export class GitReview {
       throw new Error('Pull request integration currently supports an origin on github.com.');
     return { root, repository: match[1] + '/' + match[2] };
   }
-  private async gh(cwd: string, args: string[]) {
+  async gh(cwd: string, args: string[]) {
     const installed = join(process.env.ProgramFiles ?? 'C:\\Program Files', 'GitHub CLI', 'gh.exe');
     const executable = process.platform === 'win32' && existsSync(installed) ? installed : 'gh';
     try {

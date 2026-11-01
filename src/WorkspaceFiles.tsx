@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FileItem, Thread, Wire } from '../shared/types';
 import FileEditor, { type FileDraft } from './FileEditor';
+import DocumentPreview, { previewable } from './DocumentPreview';
+import { t } from '../shared/i18n';
 export default function WorkspaceFiles({
   thread,
   drafts,
@@ -24,6 +26,8 @@ export default function WorkspaceFiles({
     [searching, setSearching] = useState(false),
     [location, setLocation] = useState<Wire>();
   const generation = useRef(0);
+  const [previewMode, setPreviewMode] = useState(true),
+    [browserUrl, setBrowserUrl] = useState('http://localhost:3000');
   useEffect(
     () =>
       window.desktop.onEvent((e) => {
@@ -111,6 +115,27 @@ export default function WorkspaceFiles({
   return (
     <div className="workspace-files">
       <details>
+        <summary>{t('Website preview')}</summary>
+        <label>
+          {t('Preview URL')}
+          <input type="url" value={browserUrl} onChange={(e) => setBrowserUrl(e.target.value)} />
+        </label>
+        <button
+          onClick={() =>
+            void window.desktop
+              .call('preview:browser', { url: browserUrl })
+              .catch((e) => setError(String(e)))
+          }
+        >
+          {t('Open isolated browser')}
+        </button>
+        <p className="muted">
+          {t(
+            'Web previews use a separate temporary browser session without desktop APIs. Downloads and device permissions are disabled.',
+          )}
+        </p>
+      </details>
+      <details>
         <summary>Create or rename files</summary>
         <label>
           Workspace path
@@ -192,9 +217,9 @@ export default function WorkspaceFiles({
             checked={contents}
             onChange={(e) => setContents(e.target.checked)}
           />
-          Search contents
+          {t('Search contents')}
         </label>
-        <button disabled={searching || !query.trim()}>Search files</button>
+        <button disabled={searching || !query.trim()}>{t('Search files')}</button>
         {searching && (
           <button
             type="button"
@@ -204,7 +229,7 @@ export default function WorkspaceFiles({
               void window.desktop.call('files:cancel-search', { id: thread.id });
             }}
           >
-            Cancel search
+            {t('Cancel search')}
           </button>
         )}
       </form>
@@ -282,21 +307,35 @@ export default function WorkspaceFiles({
       {active ? (
         <>
           <div className="file-preview-heading">
-            <button aria-label="Back to files" onClick={() => setActive(undefined)}>
-              Back to files
+            <button aria-label={t('Back to files')} onClick={() => setActive(undefined)}>
+              {t('Back to files')}
             </button>
             <span>{active}</span>
           </div>
-          <FileEditor
-            key={active}
-            id={thread.id}
-            path={active}
-            draft={drafts[thread.cwd + '\0' + active]}
-            update={(draft) => update(active, draft)}
-            busy={busy}
-            location={location}
-            navigate={(path, hit) => open(path, hit)}
-          />
+          {previewable(active) && (
+            <label className="check-row">
+              <input
+                type="checkbox"
+                checked={previewMode}
+                onChange={(e) => setPreviewMode(e.target.checked)}
+              />
+              {t('Preview document or media')}
+            </label>
+          )}
+          {previewable(active) && previewMode ? (
+            <DocumentPreview key={active} id={thread.id} path={active} />
+          ) : (
+            <FileEditor
+              key={active}
+              id={thread.id}
+              path={active}
+              draft={drafts[thread.cwd + '\0' + active]}
+              update={(draft) => update(active, draft)}
+              busy={busy}
+              location={location}
+              navigate={(path, hit) => open(path, hit)}
+            />
+          )}
         </>
       ) : (
         <>
@@ -306,7 +345,7 @@ export default function WorkspaceFiles({
               <button
                 onClick={() => setFolder(folder.split(/[\\/]/).slice(0, -1).join('/') || '.')}
               >
-                Up one folder
+                {t('Up one folder')}
               </button>
             )}
           </div>

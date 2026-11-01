@@ -4,6 +4,8 @@ Windows local coding workflows come first. The detailed capability/evidence matr
 
 ## Delivered foundation
 
+- [x] Unreleased extended workbench: local schedules, PR watches/continuation, paired mobile/REST access, native provider profiles, local document/media/browser previews, common-control localization and appearance preferences. See [scope and limits](docs/EXTENDED-WORKBENCH.md).
+
 - [x] 0.8.4: structured native Grok questions with session-bound answers/cancellation; automatic file/editor/Git refresh and conflict comparison; per-turn reported-edit review; persistent revision-checked unread results; screenshot paste and OS-backed file drops. Scope and evidence limits: [release notes](docs/RELEASE-0.8.4.md).
 
 - [x] Projects, persistent chats, naming/pinning/archive and restore.
@@ -83,7 +85,8 @@ Windows local coding workflows come first. The detailed capability/evidence matr
 
 - [ ] macOS/Linux releases with platform-specific runtime, PTY, signing and security acceptance.
 - [ ] Windows ARM64 support.
-- [ ] Remote hosts and scheduled automations, deferred by user choice.
+- [x] Local scheduled automations and paired remote mobile/REST access (unreleased source).
+- [ ] Agent execution on remote hosts; messaging-platform bridges and external tunnel/device acceptance.
 - [ ] Browser/computer-use features only where a documented runtime/service supports them.
 
 ## Built-in engine and media

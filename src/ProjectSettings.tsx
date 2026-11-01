@@ -1,3 +1,4 @@
+import { t } from '../shared/i18n';
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import type { Project } from '../shared/types';
@@ -75,7 +76,7 @@ export default function ProjectSettings({
         )}
         <div className="modal-actions">
           <button disabled={busy} onClick={close}>
-            Cancel
+            {t('Cancel')}
           </button>
           <button
             className="primary"

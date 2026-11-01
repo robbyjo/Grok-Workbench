@@ -8,7 +8,14 @@ import {
   protocol,
   clipboard,
   nativeImage,
+  safeStorage,
+  session,
 } from 'electron';
+import { Background } from './background';
+import { RemoteAccess } from './remote';
+import { Providers, providerModel } from './providers';
+import { previewFile, previewBytes } from './document-preview';
+import { validateLanguage } from '../shared/i18n';
 import { WorkspaceWatch } from './file-watch';
 import { turnEdits } from '../shared/turn-review';
 import { basename, join, isAbsolute, dirname, delimiter } from 'node:path';
@@ -57,7 +64,7 @@ import {
   embeddedEngine,
 } from './runtime';
 import { createWorktree, directory, files, gitState, textFile } from './workspace';
-import type { Attachment, DesktopEvent, Wire } from '../shared/types';
+import type { Attachment, DesktopEvent, Thread, Wire } from '../shared/types';
 
 const isDev = process.argv.includes('--dev');
 const rendererFile = join(__dirname, '../../dist/index.html');
@@ -82,6 +89,10 @@ let account: Account;
 let accountMutation = false;
 let accountCancelled = false;
 let media: Media;
+let background: Background;
+let remote: RemoteAccess;
+let providers: Providers;
+const previewWindows = new Set<BrowserWindow>();
 const fileSearches = new Map<string, AbortController>();
 const generating = new Set<string>();
 const workspaceWatch = new WorkspaceWatch();
@@ -149,6 +160,35 @@ function trusted(frame: Electron.WebFrameMain | null) {
     frame === window.webContents.mainFrame &&
     (isDev ? frame.url === 'http://127.0.0.1:5173/' : rendererUrlMatches(frame.url, rendererFile))
   );
+}
+function changeProvider(item: Thread, providerId?: string) {
+  if (
+    workspaceMutation ||
+    mcpMutation ||
+    accountMutation ||
+    ['running', 'connecting', 'approval'].includes(item.status) ||
+    taskWorkflows.owns(item.id) ||
+    item.queue?.length
+  )
+    throw new Error(
+      'Finish the current turn, queued prompts or workspace operation before changing providers.',
+    );
+  if (providerId) providers.assert(providerId);
+  if (item.providerId === providerId) return;
+  const previousSessionId = item.sessionId;
+  agents.disconnect(item.id);
+  item.providerId = providerId;
+  item.sessionId = undefined;
+  item.session = undefined;
+  item.status = 'idle';
+  if (previousSessionId)
+    item.entries.push({
+      id: randomUUID(),
+      type: 'notice',
+      text: 'Provider changed. A fresh native session starts with the next prompt; the desktop transcript is retained.',
+      data: { previousSessionId },
+    });
+  store.flush();
 }
 async function dispatch(method: string, args: Wire) {
   // Native inventories may start helpers directly rather than through agent:connect.
@@ -291,6 +331,102 @@ async function dispatch(method: string, args: Wire) {
     }
   };
   switch (method) {
+    case 'background:list':
+      return background.list();
+    case 'background:save':
+      if (args.providerId) providers.assert(string(args.providerId, 'provider', 100));
+      return background.save(args);
+    case 'background:edit':
+      return background.edit(args.kind, args.itemId, args.revision, args.operation);
+    case 'background:watch':
+      return background.watch(args);
+    case 'background:check':
+      await background.tick(true);
+      return background.list();
+    case 'background:cancel':
+      return background.cancelRun(args.runId);
+    case 'remote:status':
+      return remote.status();
+    case 'remote:start':
+      return remote.start(args);
+    case 'remote:stop':
+      remote.stop();
+      return remote.status();
+    case 'providers:list':
+      return providers.list();
+    case 'providers:preview':
+      return providers.preview(args);
+    case 'providers:save':
+      return mutate(async () => {
+        await agents.shutdownAndWait();
+        return providers.save(args);
+      });
+    case 'providers:remove':
+      return mutate(async () => {
+        if (
+          store.state.threads.some((t) => t.providerId === args.providerId) ||
+          background.list().schedules.some((s) => s.providerId === args.providerId)
+        )
+          throw new Error(
+            'Choose another provider for its chats and schedules before removing this profile.',
+          );
+        await agents.shutdownAndWait();
+        return providers.remove(args.providerId, args.revision);
+      });
+    case 'providers:select': {
+      const item = thread();
+      changeProvider(
+        item,
+        args.providerId ? string(args.providerId, 'provider ID', 100) : undefined,
+      );
+      return item;
+    }
+    case 'preview:file':
+      return args.assetId
+        ? previewBytes(
+            media.bytes(string(args.assetId, 'asset', 100)),
+            media.list().find((a) => a.id === args.assetId)?.name ?? '',
+          )
+        : previewFile(thread().cwd, string(args.path, 'preview path', 4096));
+    case 'preview:browser': {
+      const url = new URL(string(args.url, 'preview URL', 4096));
+      if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password)
+        throw new Error('Enter an HTTP or HTTPS preview URL without credentials.');
+      if (previewWindows.size >= 3)
+        throw new Error('Close a preview window before opening another.');
+      const partition = `preview-${randomUUID()}`;
+      const isolated = session.fromPartition(partition);
+      isolated.setPermissionRequestHandler((_wc, _permission, callback) => callback(false));
+      isolated.setPermissionCheckHandler(() => false);
+      isolated.on('will-download', (event) => event.preventDefault());
+      const preview = new BrowserWindow({
+        width: 1100,
+        height: 800,
+        title: 'Website preview',
+        autoHideMenuBar: true,
+        webPreferences: {
+          partition,
+          contextIsolation: true,
+          nodeIntegration: false,
+          sandbox: true,
+          webSecurity: true,
+        },
+      });
+      previewWindows.add(preview);
+      preview.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+      const navigation = (event: Electron.Event, destination: string) => {
+        if (!/^https?:\/\//i.test(destination)) event.preventDefault();
+      };
+      preview.webContents.on('will-navigate', navigation);
+      preview.webContents.on('will-redirect', navigation);
+      preview.webContents.on('will-attach-webview', (event) => event.preventDefault());
+      preview.on('closed', () => {
+        previewWindows.delete(preview);
+        void isolated.clearStorageData().catch(() => {});
+      });
+      await preview.loadURL(url.href);
+      return { opened: true };
+    }
     case 'questions':
       return agents.questionsSnapshot();
     case 'question:answer':
@@ -568,6 +704,10 @@ async function dispatch(method: string, args: Wire) {
         args.appearance === undefined
           ? store.state.settings.appearance
           : validateAppearance(args.appearance);
+      const language =
+        args.language === undefined
+          ? store.state.settings.language
+          : validateLanguage(args.language);
       const shortcuts = validateShortcuts(args.shortcuts ?? store.state.settings.shortcuts ?? {});
       const budget = args.storageMiB ?? store.state.settings.storageMiB ?? 512;
       const aggregate = profileBudget(args.profileMiB ?? store.state.settings.profileMiB ?? 4096);
@@ -588,6 +728,7 @@ async function dispatch(method: string, args: Wire) {
         defaultPermissionMode:
           args.defaultPermissionMode ?? store.state.settings.defaultPermissionMode,
         appearance,
+        language,
         shortcuts,
         storageMiB: budget,
         profileMiB: aggregate,
@@ -1127,12 +1268,23 @@ async function dispatch(method: string, args: Wire) {
     case 'agent:cancel':
       if (taskWorkflows.cancel(thread().id)) return;
       return agents.cancel(thread().id);
-    case 'agent:config':
-      return agents.config(
+    case 'agent:config': {
+      const modelChoice = thread().session?.configOptions?.some(
+        (c: Wire) => c.id === args.configId && (c.category === 'model' || c.id === 'model'),
+      );
+      const providerId = modelChoice ? providers.modelSelection(args.value) : undefined;
+      if (modelChoice && providerId !== thread().providerId) changeProvider(thread(), providerId);
+      const result = await agents.config(
         thread().id,
         string(args.configId, 'configuration ID', 100),
         string(args.value, 'value', 200),
       );
+      if (modelChoice) {
+        thread().providerId = providerId;
+        store.flush();
+      }
+      return result;
+    }
     case 'agent:authenticate':
       return agents.authenticate(thread().id, string(args.methodId, 'authentication method', 100));
     case 'permissions':
@@ -1396,6 +1548,9 @@ function createWindow() {
     }
   });
   window.on('closed', () => {
+    background?.stop();
+    remote?.stop();
+    for (const preview of previewWindows) preview.destroy();
     account.cancel();
     agents.shutdown();
     terminals.shutdown();
@@ -1404,6 +1559,8 @@ function createWindow() {
     store.flush();
   });
   window.webContents.on('render-process-gone', (_event, details) => {
+    background?.stop();
+    remote?.stop();
     account.cancel();
     diagnostics.record('renderer-crash', { reason: details.reason, code: details.exitCode });
     agents.shutdown();
@@ -1416,8 +1573,10 @@ function createWindow() {
         defaultId: 0,
       })
       .then(({ response }) => {
-        if (response === 0) window.reload();
-        else app.quit();
+        if (response === 0) {
+          window.reload();
+          background?.start();
+        } else app.quit();
       });
   });
   if (isDev) void window.loadURL('http://127.0.0.1:5173/');
@@ -1503,6 +1662,12 @@ else {
       profileStorage.assertCapacity(store.state.settings.profileMiB ?? 4096);
     store.storageFault = () => agents.shutdown();
     credentials = new Credentials(app.getPath('userData'));
+    providers = new Providers(
+      join(app.getPath('userData'), 'provider-keys'),
+      store.history,
+      grokProfile,
+      safeStorage,
+    );
     const accountDirectory = join(app.getPath('userData'), 'account');
     mkdirSync(accountDirectory, { recursive: true });
     account = new Account(
@@ -1516,7 +1681,27 @@ else {
     );
     media = new Media(join(app.getPath('userData'), 'media-files'), store.history);
     protocol.handle('grok-media', (request) => media.response(request));
-    agents.environment = () => credentials.environment(store.state.settings.authMode ?? 'auto');
+    agents.environment = (id) => {
+      const selected = id ? store.thread(id).providerId : undefined;
+      return providers.environment(
+        credentials.environment(selected ? 'oauth' : (store.state.settings.authMode ?? 'auto')),
+        selected,
+      );
+    };
+    agents.beforePrompt = async (id) => {
+      const item = store.thread(id);
+      if (!item.providerId) return;
+      providers.assert(item.providerId);
+      const value = providerModel(item.providerId);
+      const option = item.session?.configOptions?.find(
+        (c: Wire) => c.category === 'model' || c.id === 'model',
+      );
+      if (!option)
+        throw new Error(
+          'This engine does not advertise a model selector. Reconnect or inspect provider configuration.',
+        );
+      if (option.currentValue !== value) await agents.config(id, option.id, value);
+    };
     agents.canConnect = () => !shuttingDown;
     agents.canStart = () =>
       !shuttingDown &&
@@ -1537,12 +1722,60 @@ else {
     taskWorkflows.prompt = (id, text) => agents.prompt(id, text, []);
     taskWorkflows.stopAgent = (id) => agents.cancel(id);
     taskWorkflows.configure = async (id, selection) => {
+      const model = selection.models?.find(
+        (m: Wire) => m.id === 'model' || m.value.startsWith('workbench-'),
+      );
+      if (model && !agents.hasConnection(id) && !store.thread(id).sessionId) {
+        store.thread(id).providerId = providers.modelSelection(model.value);
+        store.flush();
+      }
+      for (const choice of selection.models ?? []) await agents.config(id, choice.id, choice.value);
       if (selection.mode) await agents.config(id, '__mode', selection.mode);
-      for (const model of selection.models ?? []) await agents.config(id, model.id, model.value);
     };
     taskWorkflows.test = (id, actionId, revision) =>
       dispatch('actions:run', { id, actionId, revision });
     gitReview = new GitReview(store);
+    background = new Background(
+      store,
+      (id, text) => dispatch('agent:prompt', { id, text }),
+      (id) => agents.cancel(id),
+      async (watch) => {
+        const item = store.thread(watch.threadId);
+        return JSON.parse(
+          await gitReview.gh(item.cwd, [
+            'pr',
+            'view',
+            String(watch.number),
+            '--repo',
+            watch.repository,
+            '--json',
+            'state,headRefOid,comments,reviews,statusCheckRollup',
+          ]),
+        );
+      },
+      () => emit({ type: 'background-changed' }),
+    );
+    background.available = () =>
+      agents.canStart() && !replacing && !taskWorkflows.busy() && dirtyDocuments === 0;
+    background.notify = (id) => emit({ type: 'attention', id, kind: 'complete' });
+    background.configure = async (id, model) => {
+      if (!model) return;
+      await dispatch('agent:connect', { id });
+      const option = store
+        .thread(id)
+        .session?.configOptions?.find((c: Wire) => c.category === 'model' || c.id === 'model');
+      if (!option) throw new Error('Model selection is unavailable.');
+      await dispatch('agent:config', { id, configId: option.id, value: model });
+    };
+    remote = new RemoteAccess(
+      store,
+      (id, text, key) => background.run('remote', key, 'Remote prompt', id, text),
+      (id) => {
+        if (taskWorkflows.owns(id)) throw new Error('Stop managed tasks in the desktop app.');
+        agents.cancel(id);
+      },
+      () => emit({ type: 'background-changed' }),
+    );
     terminals = new Terminals(emit, store.history);
     diagnostics = new Diagnostics(join(app.getPath('userData'), 'diagnostics'));
     diagnostics.record('startup', { count: store.state.threads.length });
@@ -1586,6 +1819,7 @@ else {
       }
     });
     createWindow();
+    background.start();
   });
   app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();
@@ -1597,6 +1831,8 @@ else {
   let shutdownFinished = false;
   let shutdownPending = false;
   app.on('will-quit', (event) => {
+    background?.stop();
+    remote?.stop();
     workspaceWatch.close();
     if (!shutdownFinished && (account || agents)) {
       event.preventDefault();

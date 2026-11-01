@@ -2,6 +2,8 @@
 
 The project landing page lives in `website/`. It is a static HTML/CSS/JavaScript website with no build step, external fonts, analytics, or runtime dependencies. It includes a Windows download link, a real application screenshot, a feature overview, and a four-step first-run tutorial.
 
+The page title, description, social metadata and visible introduction identify the project as a **Grok Build GUI for Windows**, with “graphical user interface (GUI)” spelled out in the hero copy. A canonical URL identifies the GitHub Pages location. This wording clarifies the product; search indexing and rankings are not guaranteed. `tests/ui/website-gui.spec.ts` checks the metadata and desktop/mobile layout.
+
 The header's **Theme** selector offers **System**, **Light**, and **Dark**. System is the default and follows operating-system changes while the page is open. Explicit choices are remembered in browser-local storage; selecting System clears the override. If storage is blocked, the selector still works for the current page. This controls the website's appearance; the app has its own Appearance settings.
 
 ## Preview locally
