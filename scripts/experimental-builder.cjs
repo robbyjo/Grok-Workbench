@@ -5,6 +5,9 @@ const crypto = require('node:crypto');
 const base = require('../package.json').build;
 module.exports = {
   ...base,
+  // Chromium's Linux setuid helper fails when the executable path has spaces.
+  // Keep the installation directory safe while retaining the friendly UI name.
+  productName: process.platform === 'linux' ? 'Grok-Workbench' : base.productName,
   files: base.files.filter((file) => file !== 'scripts/portable-update-worker.ps1'),
   extraFiles: [],
   extraResources: [
@@ -22,6 +25,7 @@ module.exports = {
     target: ['deb', 'tar.gz'],
     category: 'Development',
     executableName: 'grok-workbench',
+    desktop: { entry: { Name: base.productName } },
     maintainer: 'Grok Workbench contributors',
     artifactName: 'Grok-Workbench-${version}-linux-${arch}-EXPERIMENTAL.${ext}',
   },
