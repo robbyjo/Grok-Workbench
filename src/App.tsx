@@ -763,7 +763,15 @@ export default function App() {
           <div className="local-machine">
             <span className="status-dot idle" />
             <span>
-              Local machine<small>Windows · local workflows</small>
+              Local machine
+              <small>
+                {window.desktop.platform === 'win32'
+                  ? 'Windows'
+                  : window.desktop.platform === 'darwin'
+                    ? 'macOS'
+                    : 'Linux'}{' '}
+                · local workflows
+              </small>
             </span>
           </div>
           <AccountControl state={state} />
@@ -1463,7 +1471,12 @@ export default function App() {
               <div className="inspector-footer">
                 <ShieldCheck size={14} />
                 <span>
-                  Permissions apply.<small>Windows OS sandbox unavailable.</small>
+                  Permissions apply.
+                  <small>
+                    {window.desktop.platform === 'win32'
+                      ? 'Windows OS sandbox unavailable.'
+                      : 'Agent OS isolation unverified.'}
+                  </small>
                 </span>
               </div>
             </aside>
@@ -1534,7 +1547,11 @@ export default function App() {
                           id="executable"
                           value={executable}
                           onChange={(event) => setExecutable(event.target.value)}
-                          placeholder="embedded, grok or C:\path\to\grok.exe"
+                          placeholder={
+                            window.desktop.platform === 'win32'
+                              ? 'embedded, grok or C:\\path\\to\\grok.exe'
+                              : 'embedded, grok or /path/to/grok'
+                          }
                         />
                         <button
                           onClick={async () => {
@@ -1546,7 +1563,7 @@ export default function App() {
                         </button>
                       </div>
                       <small>
-                        Use “embedded” for the built-in engine, “grok” on PATH, or select a Windows
+                        Use “embedded” for the built-in engine, “grok” on PATH, or select a local
                         executable.
                       </small>
                       <div className="runtime-help">
@@ -1623,8 +1640,10 @@ export default function App() {
                         <p>
                           Grok controls tool permissions and project trust. Choosing “don't ask
                           again for anything” enables always-approve for that chat until you turn
-                          approval prompts back on. Grok currently has no OS sandbox on Windows. The
-                          interactive terminal runs as your Windows user.
+                          approval prompts back on.{' '}
+                          {window.desktop.platform === 'win32'
+                            ? 'Grok currently has no OS sandbox on Windows. The interactive terminal runs as your Windows user.'
+                            : 'Agent OS isolation has not been validated on this experimental platform. The interactive terminal and project actions run with your current user permissions.'}
                         </p>
                       </div>
                     </>
@@ -1708,7 +1727,8 @@ export default function App() {
             />
             <div className="settings-footer">
               <small className="muted">
-                Grok Workbench {version} · Independent client · Windows first
+                Grok Workbench {version} · Independent client ·{' '}
+                {window.desktop.platform === 'win32' ? 'Windows first' : 'Experimental platform'}
               </small>
               <button onClick={() => closeSettings()}>Done</button>
             </div>
