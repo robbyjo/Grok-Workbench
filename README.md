@@ -2,7 +2,7 @@
 
 A Windows-first desktop application with **Grok Build built in**, supporting Grok account OAuth and xAI API keys. The target is comparable local coding workflows to Codex wherever Grok supports them. This is an independent Apache-2.0 project; full workflow parity is still being developed.
 
-**0.8.4 alpha · Windows 10/11 x64 · portable executable.** macOS, Linux and ARM64 are future targets. See [TODO.md](TODO.md), the [parity audit](docs/PARITY.md), and [validation evidence](docs/VALIDATION.md).
+**0.8.4 alpha · Windows 10/11 x64 · portable executable.** Linux x64 and macOS Intel/Apple Silicon packages are experimental; macOS is **UNTESTED until volunteer validation**. See [experimental platform builds](docs/EXPERIMENTAL-PLATFORMS.md). See [TODO.md](TODO.md), the [parity audit](docs/PARITY.md), and [validation evidence](docs/VALIDATION.md).
 
 [Project website and quick-start tutorial](https://robbyjo.github.io/Grok-Workbench/) · [Website source and hosting instructions](docs/WEBSITE.md)
 
