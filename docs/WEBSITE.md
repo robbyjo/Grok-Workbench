@@ -31,6 +31,6 @@ The repository is configured to use **Settings → Pages → Build and deploymen
 
 ## Screenshot provenance
 
-`website/assets/workbench-screenshot.png` is an unmodified application screenshot from the local `tests/ui/desktop.spec.ts` acceptance run on October 29, 2026 (`.test-data/desktop-welcome.png`). It shows the real 0.8.4 desktop interface and a disposable local test project, with no account credentials or private conversation. The caption explicitly identifies the test project. Click the screenshot on the website to view it at full size.
+`website/assets/workbench-screenshot.png` is an unmodified application screenshot from the local `tests/ui/desktop.spec.ts` acceptance run on November 1, 2026 (`.test-data/desktop-welcome.png`). It shows the real 0.8.5 desktop interface and a disposable local test project, with no account credentials or private conversation. The caption explicitly identifies the test project. Click the screenshot on the website to view it at full size.
 
-SHA-256: `3D948A614E1DB18B5DB7348B7990E5937ED0A1031A8CB6F1106785E4598C4C06`.
+SHA-256: `5D6163246D750E7FB2319F62844D0DE8B12BBC3677D8FE68CD6384FFD5749EE4`.

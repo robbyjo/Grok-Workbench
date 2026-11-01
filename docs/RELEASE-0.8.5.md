@@ -44,3 +44,15 @@ main commit, verifies package bytes and embedded Linux/Mac engine CPU/hash,
 creates a draft, checks every uploaded asset digest and then publishes. Individual
 sidecars, `SHA256SUMS.txt` and `RELEASE-PROVENANCE.json` accompany all downloads.
 The website waits until every advertised download is public before deploying.
+
+## Publication record
+
+[Published release](https://github.com/robbyjo/Grok-Workbench/releases/tag/v0.8.5), source `626a93a30818d1c66d8a65ee9a95375d44a32ca7`. Successful builds: [Windows](https://github.com/robbyjo/Grok-Workbench/actions/runs/41274679777), [Linux](https://github.com/robbyjo/Grok-Workbench/actions/runs/41274679751) and [both Mac architectures](https://github.com/robbyjo/Grok-Workbench/actions/runs/41274680825). The [publisher](https://github.com/robbyjo/Grok-Workbench/actions/runs/41277647210) verified all exact CI artifacts before publication. Independent unauthenticated downloads verified all 18 public assets and all five package checksums; v0.8.4 remains unchanged. See [the complete validation record](VALIDATION.md).
+
+| Package                                                                                                                                                                     |       Bytes | SHA-256                                                            |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------: | ------------------------------------------------------------------ |
+| [Grok-Workbench-0.8.5-Portable.exe](https://github.com/robbyjo/Grok-Workbench/releases/download/v0.8.5/Grok-Workbench-0.8.5-Portable.exe)                                   | 147,019,550 | `9e3f5ed2cfc57685d52105c76f82501cda0fe376a0b3208f6d905d5bfcb895ed` |
+| [Grok-Workbench-0.8.5-linux-amd64-EXPERIMENTAL.deb](https://github.com/robbyjo/Grok-Workbench/releases/download/v0.8.5/Grok-Workbench-0.8.5-linux-amd64-EXPERIMENTAL.deb)   | 163,750,136 | `28ed4a3903b33ae1ad9ce7af4d4869376f33c7fa7ecff2b7becd4bf8f5254a19` |
+| [Grok-Workbench-0.8.5-linux-x64-EXPERIMENTAL.tar.gz](https://github.com/robbyjo/Grok-Workbench/releases/download/v0.8.5/Grok-Workbench-0.8.5-linux-x64-EXPERIMENTAL.tar.gz) | 206,541,836 | `ee0b1ecdac40fa8fca7b2fb261065329e3b9f8142371790aa6213addaab979bf` |
+| [Grok-Workbench-0.8.5-macOS-arm64-UNTESTED.zip](https://github.com/robbyjo/Grok-Workbench/releases/download/v0.8.5/Grok-Workbench-0.8.5-macOS-arm64-UNTESTED.zip)           | 208,271,956 | `8d45640d302549cd81f6ee9aece893dd2db22276979b0b304de1bb9d94f35574` |
+| [Grok-Workbench-0.8.5-macOS-x64-UNTESTED.zip](https://github.com/robbyjo/Grok-Workbench/releases/download/v0.8.5/Grok-Workbench-0.8.5-macOS-x64-UNTESTED.zip)               | 220,135,930 | `078de20fb7a782e37a76414540a497367e4e226261aa77b8bd73ceacac327399` |

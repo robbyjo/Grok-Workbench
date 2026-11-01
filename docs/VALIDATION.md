@@ -2,24 +2,25 @@
 
 Current source version: **Grok Workbench 0.8.5**, with the pinned Grok Rust library embedded instead of a packaged CLI. The merged release adds experimental Linux and UNTESTED macOS packages; dates below use America/New_York. Earlier sections retain historical version-specific names and results.
 
-## 0.8.5 merged release candidate (November 1)
+## 0.8.5 published multi-platform release (November 1)
 
-The platform and extended-workbench branches are combined. Local build/typechecks
-and **111 backend tests** pass, with five optional/platform-specific cases skipped.
-Production dependency audit reports zero advisories. New regressions cover Linux
-provider keyring refusal, portable credential fallback, same-source platform
-publication, Windows update selection among multi-platform assets, and waiting
-for all public website download links. Final CI and publication results are
-recorded after artifact acceptance. Every application package is rebuilt from
-the merged 0.8.5 source; unchanged native-engine compilation caches may be reused
-after Cargo revalidates the pinned source and dependency graph.
+[Release v0.8.5](https://github.com/robbyjo/Grok-Workbench/releases/tag/v0.8.5) is Latest and targets source `626a93a30818d1c66d8a65ee9a95375d44a32ca7`. The merged branches are accepted by [Windows](https://github.com/robbyjo/Grok-Workbench/actions/runs/41274679777), [Linux](https://github.com/robbyjo/Grok-Workbench/actions/runs/41274679751) and [both Mac architectures](https://github.com/robbyjo/Grok-Workbench/actions/runs/41274680825). The [verified-artifact publisher](https://github.com/robbyjo/Grok-Workbench/actions/runs/41277647210) published only their exact accepted application packages. A [one-time CI dispatcher](https://github.com/robbyjo/Grok-Workbench/actions/runs/41277436028) used GitHub's short-lived job token to start the existing main publisher and [website workflow](https://github.com/robbyjo/Grok-Workbench/actions/runs/41277740697); no stored user credential was read or changed.
 
-Thirteen source GUI scenarios pass locally. The screenshot-paste scenario is
-blocked on this session's native clipboard: an independent Electron-only probe
-also writes an image but reads no supported clipboard types. Release still
-requires the complete source and packaged GUI suites on hosted Windows CI.
+Windows passed the full backend suite, all 14 source GUI scenarios, all 14 packaged GUI scenarios, actual portable launch/relocation and replacement/restart/rollback. The screenshot-paste path passed in hosted acceptance; this local desktop session could not read back a native clipboard image in an independent Electron-only probe. Locally the build/typechecks and 111 backend cases passed with five optional/platform-specific cases skipped; the production dependency audit reported zero advisories.
 
-## Unreleased extended workbench (October 31)
+Linux passed native protocol/provider/remote/profile checks and all eight sandbox-enabled desktop groups against the source, extracted Debian package and extracted archive. Independently, the same merged source passed 49 applicable backend checks and eight source GUI groups on the user's Ubuntu machine, using the unchanged previously built engine. System installation, other distributions, real desktop integration and live provider accounts remain unvalidated. Both Mac targets passed native fixtures, packaging and ad-hoc signature verification; **interactive macOS behavior remains UNTESTED until volunteer validation**.
+
+All 18 public assets were downloaded without authentication and matched their GitHub asset digests and sizes. All five packages matched their checksum sidecars and release provenance; Linux ELF and Mac Mach-O engine bytes/CPU types were checked independently. The v0.8.4 release ID, asset IDs, sizes and digests remained unchanged. The engine stays at public Grok Build 1.0.45 with the tested MCP compression backport. Windows remains unsigned; Macs lack Developer ID signing/notarization. Linux/Mac updates are manual.
+
+| Package                                                                                                                                                                     |       Bytes | SHA-256                                                            |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------: | ------------------------------------------------------------------ |
+| [Grok-Workbench-0.8.5-Portable.exe](https://github.com/robbyjo/Grok-Workbench/releases/download/v0.8.5/Grok-Workbench-0.8.5-Portable.exe)                                   | 147,019,550 | `9e3f5ed2cfc57685d52105c76f82501cda0fe376a0b3208f6d905d5bfcb895ed` |
+| [Grok-Workbench-0.8.5-linux-amd64-EXPERIMENTAL.deb](https://github.com/robbyjo/Grok-Workbench/releases/download/v0.8.5/Grok-Workbench-0.8.5-linux-amd64-EXPERIMENTAL.deb)   | 163,750,136 | `28ed4a3903b33ae1ad9ce7af4d4869376f33c7fa7ecff2b7becd4bf8f5254a19` |
+| [Grok-Workbench-0.8.5-linux-x64-EXPERIMENTAL.tar.gz](https://github.com/robbyjo/Grok-Workbench/releases/download/v0.8.5/Grok-Workbench-0.8.5-linux-x64-EXPERIMENTAL.tar.gz) | 206,541,836 | `ee0b1ecdac40fa8fca7b2fb261065329e3b9f8142371790aa6213addaab979bf` |
+| [Grok-Workbench-0.8.5-macOS-arm64-UNTESTED.zip](https://github.com/robbyjo/Grok-Workbench/releases/download/v0.8.5/Grok-Workbench-0.8.5-macOS-arm64-UNTESTED.zip)           | 208,271,956 | `8d45640d302549cd81f6ee9aece893dd2db22276979b0b304de1bb9d94f35574` |
+| [Grok-Workbench-0.8.5-macOS-x64-UNTESTED.zip](https://github.com/robbyjo/Grok-Workbench/releases/download/v0.8.5/Grok-Workbench-0.8.5-macOS-x64-UNTESTED.zip)               | 220,135,930 | `078de20fb7a782e37a76414540a497367e4e226261aa77b8bd73ceacac327399` |
+
+## Extended workbench qualification before 0.8.5 (October 31)
 
 The [extended workbench additions](EXTENDED-WORKBENCH.md) implement local schedules and durable run records, PR polling/opt-in continuation, paired loopback mobile/REST access, native provider profiles, document/media/browser previews, six-language navigation/common controls, and personalization. The static website now identifies the application as a Grok Build GUI in its title, search/social metadata, heading and introduction. New dependency notices are generated; PDF.js is bundled into the renderer, with its unused Node-only native canvas dependency excluded from production dependency packaging.
 
@@ -29,7 +30,7 @@ The extended desktop scenario configures a provider through Settings, executes o
 
 PDF, mobile, localized Settings and desktop/mobile website screenshots were inspected. The website test checks GUI metadata, image loading and no horizontal overflow at 1,280 px and 390 px widths. This local acceptance did not produce a portable package, publish an app release or deploy the website. Pushing the source triggers the existing Windows CI and website workflows; their outcomes are separate from this local evidence. Hosted provider/API-format matrices, external tunnel/physical-device access, real PR lifecycle, full-interface translation and full accessibility acceptance remain unverified. Existing published 0.8.4 assets are unchanged.
 
-## Unreleased pinned-engine MCP backport (October 31)
+## Pinned-engine MCP qualification before 0.8.5 (October 31)
 
 The embedded Grok Build source stays at **1.0.45**, revision `2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8`; Cargo.lock, the binding ABI and native storage contract are unchanged. MCP's separate reqwest 0.13 client previously treated compressed JSON responses as raw text, failing initialization. Source preparation now enables gzip, Brotli, deflate and Zstandard decoding for that existing dependency. The hook `continue: false` behavior is already present in this source and was not changed.
 

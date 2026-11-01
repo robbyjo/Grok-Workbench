@@ -20,7 +20,7 @@ Silicon packages are built on separate GitHub-hosted macOS runners using the
 hardware.** Compilation, native protocol fixtures, and signature verification
 do not establish normal desktop, account, or agent behavior.
 
-The 0.8.5 candidate extends native fixture acceptance to provider routing,
+The published 0.8.5 release extends native fixture acceptance to provider routing,
 schedules, paired remote HTTP controls and secure key storage. Remembered
 provider keys use the same Linux keyring protection as xAI keys; `basic_text`
 and unknown backends are refused. Linux acceptance exercises the source app
