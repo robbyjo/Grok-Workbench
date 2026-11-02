@@ -16,6 +16,7 @@ import { WindowsDesktop } from './windows-desktop';
 import { Narrator } from './narration';
 import { PdfText } from './pdf-text';
 import { WorkbenchTools } from './workbench-tools';
+import { Workstation } from './workstation';
 import { Background } from './background';
 import { RemoteAccess } from './remote';
 import { Providers, providerModel } from './providers';
@@ -101,6 +102,7 @@ let desktop: WindowsDesktop;
 let narrator: Narrator;
 let pdfText: PdfText;
 let workbenchTools: WorkbenchTools;
+let workstation: Workstation;
 const previewWindows = new Set<BrowserWindow>();
 const fileSearches = new Map<string, AbortController>();
 const generating = new Set<string>();
@@ -350,6 +352,34 @@ async function dispatch(method: string, args: Wire) {
     }
   };
   switch (method) {
+    case 'application:status':
+      return workstation.catalog(thread().id);
+    case 'application:health':
+      return workstation.invoke(thread().id, 'krita_tools', { tool: 'krita_state', arguments: {} });
+    case 'application:practice': {
+      const url = await workstation.practice(thread().id);
+      await shell.openExternal(url);
+      return { url };
+    }
+    case 'application:grant':
+      if (!agents.canStart() || remote.status().running)
+        throw new Error('Stop remote access and wait for workspace operations first.');
+      return workstation.grant(thread().id, args.applications);
+    case 'application:cancel':
+      return workstation.cancel(thread().id);
+    case 'application:launch':
+      thread();
+      return workstation.launch(string(args.application, 'application', 30));
+    case 'application:open': {
+      const path = await workstation.file(
+        thread().id,
+        string(args.jobId, 'job', 100),
+        string(args.name, 'artifact', 100),
+      );
+      const error = await shell.openPath(path);
+      if (error) throw new Error(error);
+      return;
+    }
     case 'assist:status':
       return {
         desktop: desktop.status(thread().id),
@@ -362,6 +392,9 @@ async function dispatch(method: string, args: Wire) {
     case 'desktop:windows':
       thread();
       return desktop.windows();
+    case 'desktop:input-status':
+      thread();
+      return desktop.inputStatus();
     case 'desktop:enable': {
       const item = thread();
       if (!agents.canStart() || remote.status().running)
@@ -413,6 +446,7 @@ async function dispatch(method: string, args: Wire) {
     case 'remote:status':
       return remote.status();
     case 'remote:start':
+      workstation.revoke();
       desktop.stop();
       return remote.start(args);
     case 'remote:stop':
@@ -566,6 +600,7 @@ async function dispatch(method: string, args: Wire) {
       for (const id of args.projectIds)
         if (store.project(id).hidden)
           for (const chat of store.state.threads.filter((t) => t.projectId === id)) {
+            workstation.revoke(chat.id);
             desktop.stop(chat.id);
             narrator.stop(chat.id);
             agents.disconnect(chat.id);
@@ -577,6 +612,7 @@ async function dispatch(method: string, args: Wire) {
       store.bulkChats(args.ids, args);
       if (args.archived === true)
         for (const id of args.ids) {
+          workstation.revoke(id);
           desktop.stop(id);
           narrator.stop(id);
           agents.disconnect(id);
@@ -1259,6 +1295,7 @@ async function dispatch(method: string, args: Wire) {
       });
       if (project.hidden) {
         for (const item of store.state.threads.filter((item) => item.projectId === id)) {
+          workstation.revoke(item.id);
           desktop.stop(item.id);
           narrator.stop(item.id);
           agents.disconnect(item.id);
@@ -1312,6 +1349,7 @@ async function dispatch(method: string, args: Wire) {
           throw new Error('Stop the active turn before archiving.');
         item.archived = args.archived;
         if (item.archived) {
+          workstation.revoke(item.id);
           desktop.stop(item.id);
           narrator.stop(item.id);
           agents.disconnect(item.id);
@@ -1326,12 +1364,17 @@ async function dispatch(method: string, args: Wire) {
       if (!agents.canStart()) throw new Error('Wait for the current workspace/profile operation.');
       return agents.connect(thread().id);
     case 'agent:disconnect':
+      workstation.revoke(thread().id);
       desktop.stop(thread().id);
       return agents.disconnect(thread().id);
     case 'agent:prompt': {
       const ids = Array.isArray(args.attachments) ? args.attachments : [];
       if (ids.length > 5) throw new Error('Attach up to five files.');
-      if (generating.has(thread().id) && !narrator.isActive(thread().id))
+      if (
+        generating.has(thread().id) &&
+        !narrator.isActive(thread().id) &&
+        !workstation.busyFor(thread().id)
+      )
         throw new Error('Wait for the media job.');
       const content = ids.map((id) => media.attachment(string(id, 'attachment ID', 100)));
       const prompt = string(args.text, 'prompt', 200_000);
@@ -1343,6 +1386,7 @@ async function dispatch(method: string, args: Wire) {
       }
     }
     case 'agent:cancel':
+      workstation.cancel(thread().id);
       desktop.stop(thread().id);
       if (taskWorkflows.cancel(thread().id)) return;
       return agents.cancel(thread().id);
@@ -1388,6 +1432,7 @@ async function dispatch(method: string, args: Wire) {
         throw new Error('Use embedded, grok on PATH, or an absolute path to the Grok executable.');
       desktop.stop();
       narrator.stop();
+      workstation.revoke();
       agents.shutdown();
       store.state.settings.executable = executable;
       store.flush();
@@ -1794,10 +1839,24 @@ else {
       },
       () => profileStorage.assertCapacity(store.state.settings.profileMiB ?? 4096),
     );
+    workstation = new Workstation(
+      app.isPackaged ? process.resourcesPath : join(app.getAppPath(), '.runtime'),
+      (id) => store.thread(id).cwd,
+      assistChanged,
+      (id, on) => {
+        if (on) generating.add(id);
+        else generating.delete(id);
+      },
+      async () => {
+        if (!agents.canStart()) throw new Error('Wait for workspace operations.');
+        await profileStorage.assertCapacity(store.state.settings.profileMiB ?? 4096);
+      },
+    );
     workbenchTools = new WorkbenchTools(
       desktop,
       narrator,
       () => agents.canStart() && !generating.size,
+      workstation,
     );
     await workbenchTools.start();
     agents.sessionMcpServers = (id) =>
@@ -1956,6 +2015,7 @@ else {
     narrator?.stop();
     pdfText?.close();
     workbenchTools?.close();
+    workstation?.close();
     background?.stop();
     remote?.stop();
     workspaceWatch.close();

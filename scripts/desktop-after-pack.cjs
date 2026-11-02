@@ -5,10 +5,12 @@ const { createHash } = require('node:crypto');
 module.exports = async (context) => {
   if (context.electronPlatformName !== 'win32') return;
   const root = join(context.appOutDir, 'resources');
-  const file = join(root, 'desktop-control.json');
-  const metadata = JSON.parse(readFileSync(file, 'utf8'));
-  metadata.sha256 = createHash('sha256')
-    .update(readFileSync(join(root, 'desktop-control.exe')))
-    .digest('hex');
-  writeFileSync(file, JSON.stringify(metadata, null, 2) + '\n');
+  for (const name of ['desktop-control', 'application-worker']) {
+    const file = join(root, name + '.json');
+    const metadata = JSON.parse(readFileSync(file, 'utf8'));
+    metadata.sha256 = createHash('sha256')
+      .update(readFileSync(join(root, name + '.exe')))
+      .digest('hex');
+    writeFileSync(file, JSON.stringify(metadata, null, 2) + '\n');
+  }
 };

@@ -83,6 +83,9 @@ export class WindowsDesktop {
   async windows() {
     return this.request({ op: 'list' });
   }
+  async inputStatus() {
+    return this.request({ op: 'input_status' });
+  }
   async enable(id: string, target: string) {
     this.stop();
     this.pendingOwner = id;

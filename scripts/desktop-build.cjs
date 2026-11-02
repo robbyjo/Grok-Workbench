@@ -36,3 +36,27 @@ writeFileSync(
   join(runtime, 'desktop-control.json'),
   JSON.stringify({ sourceSha256: hash(source), sha256: hash(output) }, null, 2) + '\n',
 );
+const applicationSource = join(root, 'native', 'application-worker.cs');
+const applicationOutput = join(runtime, 'application-worker.exe');
+execFileSync(
+  join(framework, 'csc.exe'),
+  [
+    '/nologo',
+    '/target:exe',
+    '/platform:anycpu',
+    '/optimize+',
+    '/out:' + applicationOutput,
+    '/r:System.Web.Extensions.dll',
+    '/r:Microsoft.CSharp.dll',
+    applicationSource,
+  ],
+  { stdio: 'inherit', windowsHide: true },
+);
+writeFileSync(
+  join(runtime, 'application-worker.json'),
+  JSON.stringify(
+    { sourceSha256: hash(applicationSource), sha256: hash(applicationOutput) },
+    null,
+    2,
+  ) + '\n',
+);

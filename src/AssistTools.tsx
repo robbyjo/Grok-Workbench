@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Wire } from '../shared/types';
+import WorkstationPanel from './WorkstationPanel';
 
 function NarrationPlayer({ job, id }: { job: Wire; id: string }) {
   const audio = useRef<HTMLAudioElement>(null);
@@ -114,6 +115,7 @@ export default function AssistTools({ id }: { id: string }) {
     [voice, setVoice] = useState('eve'),
     [start, setStart] = useState(''),
     [end, setEnd] = useState('');
+  const [inputStatus, setInputStatus] = useState<Wire>();
   const previousJobs = useRef(0);
   useEffect(() => {
     if ((status?.jobs.length ?? 0) > previousJobs.current) setOpen(false);
@@ -159,9 +161,28 @@ export default function AssistTools({ id }: { id: string }) {
       )}
       {open && (
         <div className="assist-panel">
+          <WorkstationPanel id={id} />
           {status?.desktop.supported ? (
             <>
               <h3>Windows desktop control</h3>
+              <button
+                onClick={() =>
+                  void run('desktop:input-status').then((v) => {
+                    if (v) setInputStatus(v);
+                  })
+                }
+              >
+                Check desktop input
+              </button>
+              {inputStatus && (
+                <p role="status">
+                  {inputStatus.foregroundAvailable
+                    ? 'Foreground input is available.'
+                    : 'Windows is not exposing foreground input to this process.'}{' '}
+                  Station: {inputStatus.windowStation}; process desktop: {inputStatus.threadDesktop}
+                  ; input desktop: {inputStatus.inputDesktop}.
+                </p>
+              )}
               <p>
                 Choose one window for this chat. Grok can capture it, inspect controls and send
                 keyboard/mouse input in the foreground. Screen content is sent to the chat model.

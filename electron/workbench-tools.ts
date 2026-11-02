@@ -5,6 +5,8 @@ import type { Wire } from '../shared/types';
 import type { WindowsDesktop } from './windows-desktop';
 import type { Narrator } from './narration';
 import { workbenchTools } from './workbench-tool-schema';
+import { applicationTools } from './application-schema';
+import type { Workstation } from './workstation';
 
 export class WorkbenchTools {
   private server?: Server;
@@ -14,6 +16,7 @@ export class WorkbenchTools {
     private desktop: WindowsDesktop,
     private narrator: Narrator,
     private allowed: (id: string) => boolean = () => true,
+    private workstation?: Workstation,
   ) {}
   async start() {
     const server = createServer(async (req, res) => {
@@ -34,7 +37,12 @@ export class WorkbenchTools {
         const input = JSON.parse(Buffer.concat(chunks).toString('utf8'));
         const value =
           input.operation === 'list'
-            ? { tools: workbenchTools(process.platform === 'win32') }
+            ? {
+                tools: [
+                  ...workbenchTools(process.platform === 'win32'),
+                  ...(this.workstation ? applicationTools : []),
+                ],
+              }
             : await this.invoke(id, input.name, input.input);
         res.setHeader('Content-Type', 'application/json');
         res.end(JSON.stringify(value));
@@ -76,12 +84,21 @@ export class WorkbenchTools {
   async invoke(id: string, name: string, input: Wire = {}) {
     if (!input || typeof input !== 'object' || Array.isArray(input))
       throw new Error('Tool input must be an object.');
-    const schema = workbenchTools(process.platform === 'win32').find(
-      (t) => t.name === name,
-    )?.inputSchema;
+    const schema = [
+      ...workbenchTools(process.platform === 'win32'),
+      ...(this.workstation ? applicationTools : []),
+    ].find((t) => t.name === name)?.inputSchema;
     if (!schema || Object.keys(input).some((k) => !Object.hasOwn(schema.properties, k)))
       throw new Error('Unknown tool or argument.');
     let value: any;
+    if (this.workstation?.handles(name)) {
+      if (
+        ['office_create', 'blender_create', 'jmp_analyze', 'krita_tools'].includes(name) &&
+        !this.allowed(id)
+      )
+        throw new Error('Wait for the current workspace/application operation.');
+      return this.workstation.invoke(id, name, input);
+    }
     if (name === 'read_aloud_status') value = this.narrator.list(id);
     else if (name === 'read_aloud_control')
       value = this.narrator.control(id, input.job_id, input.action);

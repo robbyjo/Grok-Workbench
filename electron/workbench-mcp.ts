@@ -14,7 +14,7 @@ async function call(body: object) {
     method: 'POST',
     headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
-    signal: AbortSignal.timeout(35000),
+    signal: AbortSignal.timeout(240000),
   });
   if (!result.ok) throw new Error('Workbench tool broker unavailable.');
   return result.json();

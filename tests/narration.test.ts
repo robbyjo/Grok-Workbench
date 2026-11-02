@@ -32,6 +32,11 @@ test('packaging seals the final helper bytes after resource signing/copying', as
       join(root, 'resources', 'desktop-control.json'),
       JSON.stringify({ sourceSha256: 'preserved-source', sha256: 'before-signing' }),
     );
+    await writeFile(join(root, 'resources', 'application-worker.exe'), bytes);
+    await writeFile(
+      join(root, 'resources', 'application-worker.json'),
+      JSON.stringify({ sourceSha256: 'application-source', sha256: 'before-signing' }),
+    );
     await require('../scripts/desktop-after-pack.cjs')({
       electronPlatformName: 'win32',
       appOutDir: root,

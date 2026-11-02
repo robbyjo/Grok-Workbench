@@ -6,7 +6,9 @@ Development source after v0.8.5 includes both features on the **unchanged embedd
 
 In a chat, expand **Desktop & read aloud**, choose **Refresh windows**, select a window, then **Enable for this chat**. Ask Grok to use its `workbench` desktop tools to perform a task there. Example: “In the selected window, enter the displayed code and press Verify. Inspect the result.”
 
-The bridge captures only the selected window’s client area, returns a PNG and a bounded accessibility tree, and supports click, literal Unicode typing, navigation keys, scrolling, UI Automation invoke and set-value. Coordinates refer to the returned screenshot. Each action requires the matching view, expires after 30 seconds, consumes that view and requires a new observation before another action. At most 200 actions are allowed per grant. There is one grant across the app, scoped to its chat and the selected window’s handle, process ID, process start time and an opaque window property. A recycled window handle does not inherit the grant.
+The bridge captures only the selected window’s client area, returns a PNG and a bounded accessibility tree, and supports click, double-click, drag, literal Unicode typing, navigation/function keys, Ctrl/Shift/Alt application shortcuts, scrolling, UI Automation invoke and set-value. Drag accepts 2–128 screenshot points over 100–5,000 milliseconds, or a source/target accessibility reference from the same frame. Coordinates refer to the returned screenshot. Each action requires the matching view, expires after 30 seconds, consumes that view and requires a new observation before another action. At most 200 actions are allowed per grant. There is one grant across the app, scoped to its chat and the selected window’s handle, process ID, process start time and an opaque window property. A recycled window handle does not inherit the grant.
+
+**Check desktop input** reports foreground/input-desktop availability without sending input. A connected RDP session must still expose an unlocked input desktop. Application shortcuts do not include Windows-key/window-switching or clipboard shortcuts. Separate opt-in [application workflows](APPLICATION-WORKFLOWS.md) add native Office, Blender, Krita and JMP operations, cart calculations and chess rule checking.
 
 **Stop desktop** or **Ctrl+Alt+Escape** revokes access and terminates the helper. Canceling/disconnecting the chat, archiving/hiding it, switching engines, starting remote access, and quitting also revoke access. Queued operations cannot restore a revoked grant. Delivered input cannot be undone. Normal Grok MCP tool permissions still apply.
 
@@ -35,7 +37,7 @@ Audio plays in sequence as segments become available. The latest reading stays v
 
 ## Build and validation
 
-Windows development/package builds additionally compile the small, authored C# helper using the system .NET Framework compiler. No new npm packages or Grok native binding changes are required. `engine:build` includes this helper for Windows; experimental Linux/macOS packaging excludes it. The host verifies the helper SHA-256 against its packaged manifest before launching it.
+Windows development/package builds compile authored desktop-control and application-worker C# helpers using the system .NET Framework compiler. No Grok native binding changes are required. The application workflow suite adds pinned chess.js for chess rules. `engine:build` includes the helpers for Windows; experimental Linux/macOS packaging excludes them. The host verifies each helper's SHA-256 against its packaged manifest before launching it.
 
 The Windows `afterPack` hook seals the copied helper bytes, including any Authenticode signature applied by Electron Builder’s resource transformer. Signed packaging itself remains unvalidated until signing credentials are configured.
 
