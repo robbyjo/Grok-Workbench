@@ -157,7 +157,7 @@ test('workflow improvements: disk reconciliation, per-turn review, unread persis
     await expect(page.locator('.attachments')).toContainText('hello.txt');
     await expect
       .poll(() =>
-        page.evaluate(async () => (await window.desktop.call('drafts:get')).attachments.t?.length),
+        page.evaluate(async () => (await window.desktop.call('drafts:get')).attachments?.t?.length),
       )
       .toBe(2);
     await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].reload());

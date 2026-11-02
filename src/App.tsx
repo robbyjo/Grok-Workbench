@@ -71,6 +71,7 @@ import AppearanceSettings from './AppearanceSettings';
 import AuthenticationSettings from './AuthenticationSettings';
 import AccountControl from './AccountControl';
 import MediaStudio, { MediaPreview } from './MediaStudio';
+import AssistTools from './AssistTools';
 import { defaultShortcuts, matchesShortcut } from '../shared/shortcuts';
 import { useAccessibleDialogs } from './accessibility';
 import UserQuestions from './UserQuestions';
@@ -964,6 +965,7 @@ export default function App() {
               </div>
             )}
             {state.recoveryNotice && <p role="status">{state.recoveryNotice}</p>}
+            {thread && <AssistTools key={thread.id} id={thread.id} />}
             {searchHit && searchHit.threadId === activeId && (
               <div className="search-context" role="status">
                 <span>

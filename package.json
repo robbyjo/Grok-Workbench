@@ -20,8 +20,14 @@
     "test:native-integrations": "tsx --test scripts/native-integrations-acceptance.ts",
     "test:github-oauth": "tsx scripts/github-oauth-acceptance.ts --run",
     "test:remote": "tsx scripts/remote-portable.ts",
+    "test:desktop-use": "npm run build:main && tsx scripts/desktop-use-probe.ts",
+    "test:desktop-use:fixture": "npm run build:main && tsx scripts/desktop-use-probe.ts --self-test",
     "runtime": "node scripts/runtime.cjs",
-    "engine:build": "node scripts/engine-build.cjs && node scripts/updater-build.cjs",
+    "engine:build": "node scripts/engine-build.cjs && node scripts/updater-build.cjs && node scripts/desktop-build.cjs",
+    "desktop:build": "node scripts/desktop-build.cjs",
+    "test:assist": "npm run build && tsx scripts/assist-acceptance.ts",
+    "test:workstation": "npm run build && npm run desktop:build && tsx scripts/workstation-acceptance.ts",
+    "test:workstation:live": "npm run build && npm run desktop:build && tsx scripts/workstation-live.ts --run",
     "package:portable": "npm run build && npm run engine:build && npm run licenses && electron-builder --win portable --x64 && node scripts/update-manifest.cjs",
     "package:win": "npm run build && npm run engine:build && npm run licenses && electron-builder --win nsis --x64",
     "package:dir": "npm run build && npm run engine:build && npm run licenses && electron-builder --win --x64 --dir",
@@ -35,6 +41,7 @@
     "@lydell/node-pty": "1.2.0-beta.15",
     "@xterm/addon-fit": "^0.11.0",
     "@xterm/xterm": "^6.0.0",
+    "chess.js": "1.4.0",
     "fast-xml-parser": "^5.11.2",
     "fflate": "^0.8.3",
     "lucide-react": "^0.577.0",
@@ -64,6 +71,7 @@
     "wait-on": "^9.0.4"
   },
   "build": {
+    "afterPack": "scripts/desktop-after-pack.cjs",
     "appId": "dev.grokdesktop.app",
     "productName": "Grok Workbench",
     "directories": {
@@ -92,6 +100,22 @@
       }
     ],
     "extraResources": [
+      {
+        "from": ".runtime/application-worker.exe",
+        "to": "application-worker.exe"
+      },
+      {
+        "from": ".runtime/application-worker.json",
+        "to": "application-worker.json"
+      },
+      {
+        "from": ".runtime/desktop-control.exe",
+        "to": "desktop-control.exe"
+      },
+      {
+        "from": ".runtime/desktop-control.json",
+        "to": "desktop-control.json"
+      },
       {
         "from": ".runtime/updater-launcher.exe",
         "to": "updater-launcher.exe"

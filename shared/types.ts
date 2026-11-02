@@ -140,6 +140,8 @@ export interface TextDocument {
   revision: string;
 }
 export type DesktopEvent =
+  | { type: 'assist-changed' }
+  | { type: 'narration-pdf'; id: string; data: string; start: number; end?: number }
   | { type: 'background-changed' }
   | { type: 'question'; question: UserQuestion }
   | { type: 'question-closed'; id: string }

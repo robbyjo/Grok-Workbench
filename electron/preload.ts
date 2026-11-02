@@ -1,6 +1,21 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron';
 import type { DesktopAPI, DesktopEvent } from '../shared/types';
 const methods = new Set([
+  'application:status',
+  'application:health',
+  'application:practice',
+  'application:grant',
+  'application:cancel',
+  'application:launch',
+  'application:open',
+  'assist:status',
+  'desktop:windows',
+  'desktop:input-status',
+  'desktop:enable',
+  'desktop:stop',
+  'narration:start',
+  'narration:control',
+  'narration:pdf-result',
   'background:list',
   'background:save',
   'background:edit',

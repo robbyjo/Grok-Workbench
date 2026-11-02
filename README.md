@@ -60,6 +60,10 @@ When an approval offers **“Yes, and don't ask again for anything”**, selecti
 
 ## Media and attachments
 
+**Development source after v0.8.5:** [Windows desktop control and prompt-driven read aloud](docs/DESKTOP-AND-READ-ALOUD.md) use the existing embedded engine. Choose one window in **Desktop & read aloud** for experimental desktop actions, or ask Grok to read text, a PDF or Word DOCX aloud. Live native-window and four speech-source checks passed. These features are not in the published v0.8.5 binaries yet; scanned PDFs need OCR and older `.doc` files need conversion.
+
+The same panel now includes [Office, shopping, art, science and chess workflows](docs/APPLICATION-WORKFLOWS.md): opt-in Word/Excel creation, separate editable Blender scenes, new-document Krita MCP drawing, native JMP graphs/regression, cart arithmetic and legal chess moves/PGN. Selected-window control adds drag, double-click and application shortcuts. Live Grok checks passed for all six workflows, including a local practice shop and offline chess puzzle. Real retailer checkout, Lucas Chess/chess.com UI play and arbitrary application proficiency remain unvalidated. The embedded engine remains unchanged.
+
 Use **Media** to generate images, speech or 1–15 second video, preview images, and play audio/video in the GUI. Export, attach or delete stored outputs. Sound generation currently means text-to-speech; general music and sound-effect generation are not implemented. Video uses the upstream 480p generation client. API-key/provider permissions determine available services.
 
 Image, speech and video generation/playback passed with real **OAuth**. Video acceptance temporarily enabled account coding-data retention with explicit user consent, then restored and verified the original zero-data-retention setting. Video access can be blocked by zero-data-retention policy; the GUI shows that error and offers explicit account privacy controls. It does not silently change privacy. Protected remote-bucket video output is not downloaded by this GUI.
@@ -104,10 +108,15 @@ npm test
 npm run test:ui
 npm run package:portable  # compiles the engine and packages the executable
 npm run test:portable     # actual launcher, MCP, PTY and profile relocation
+npm run test:desktop-use:fixture # isolated visual GUI/MCP probe; no live inference
 npm run test:live         # real billable OAuth coding/MCP acceptance
 npx tsx scripts/task-acceptance.ts --run
 npx tsx scripts/media-acceptance.ts --run
 ```
+
+An optional [desktop-use experiment](docs/DESKTOP-USE-PROBE.md) tests screenshot,
+click and typing behavior in a disposable window. Live model trials are explicitly
+invoked and are separate from fixture acceptance and supported app features.
 
 Media acceptance does not change account privacy unless `--temporary-retention` is explicitly supplied after obtaining account-holder consent. It records the original setting and restores/verifies it in `finally`.
 

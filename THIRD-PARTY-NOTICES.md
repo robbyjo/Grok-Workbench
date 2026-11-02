@@ -14,6 +14,7 @@ Direct runtime components:
 | ----------------------------------------- | ---------------------------------- | ---------------------------------------------------------------------------------- |
 | Electron and its Node/Chromium components | MIT plus bundled component notices | https://github.com/electron/electron                                               |
 | PrismJS                                   | MIT                                | https://github.com/PrismJS/prism                                                   |
+| chess.js 1.4.0                            | BSD-2-Clause                       | https://github.com/jhlywa/chess.js                                                 |
 | React / React DOM                         | MIT                                | https://github.com/facebook/react                                                  |
 | lucide-react                              | ISC                                | https://github.com/lucide-icons/lucide                                             |
 | react-markdown / remark-gfm               | MIT                                | https://github.com/remarkjs/react-markdown, https://github.com/remarkjs/remark-gfm |
