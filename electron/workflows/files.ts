@@ -38,11 +38,6 @@ export class FilePlans {
         root,
         join(input.directory ?? 'organized', folder, name),
       );
-      if (
-        target.toLowerCase() !==
-        resolve(root, input.directory ?? 'organized', folder, name).toLowerCase()
-      )
-        throw new Error('Linked destination folder is excluded.');
       if (source.path.toLowerCase() === target.toLowerCase())
         throw new Error('A file already has its target name.');
       rows.push({
@@ -100,6 +95,7 @@ export class FilePlans {
   }
   async restore(id: string, root: string, path: string) {
     const f = await workspaceFile(root, path, 1024 * 1024);
+    root = await import('node:fs/promises').then((fs) => fs.realpath(root));
     const p = JSON.parse(f.bytes.toString());
     if (
       !p ||

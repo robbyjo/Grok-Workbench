@@ -1,12 +1,24 @@
 import { lstat, readFile, realpath, mkdir, writeFile } from 'node:fs/promises';
-import { resolve, relative, sep, join } from 'node:path';
+import { resolve, relative, sep, join, isAbsolute } from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
 import { inside, insideFuture } from '../paths';
 export const digest = (bytes: Uint8Array | string) =>
   createHash('sha256').update(bytes).digest('hex');
+// A workspace root may itself use a junction or Windows short-name alias. Map
+// paths beneath that selected root to its canonical spelling before checking
+// descendants; links *inside* the workspace still fail the lexical comparison.
+function workspacePath(root: string, base: string, path: string) {
+  if (!isAbsolute(path)) return resolve(base, path);
+  const rel = relative(resolve(root), resolve(path));
+  if (rel !== '..' && !rel.startsWith('..' + sep) && !isAbsolute(rel)) return resolve(base, rel);
+  return resolve(path);
+}
+const samePath = (a: string, b: string) =>
+  process.platform === 'win32' ? a.toLowerCase() === b.toLowerCase() : a === b;
 export async function workspaceDestination(root: string, path: string) {
   const base = await realpath(root),
-    target = await insideFuture(base, path),
+    expected = workspacePath(root, base, path),
+    target = await insideFuture(base, expected),
     rel = relative(base, target);
   if (
     rel
@@ -18,18 +30,14 @@ export async function workspaceDestination(root: string, path: string) {
       )
   )
     throw new Error('Private/configuration destinations are excluded.');
-  const expected = resolve(base, path);
-  if (
-    (process.platform === 'win32' ? target.toLowerCase() : target) !==
-    (process.platform === 'win32' ? expected.toLowerCase() : expected)
-  )
-    throw new Error('Linked destinations are excluded.');
+  if (!samePath(target, expected)) throw new Error('Linked destinations are excluded.');
   return target;
 }
 export async function workspaceFile(root: string, path: string, max = 20 * 1024 * 1024) {
   const base = await realpath(root),
-    target = await inside(base, path);
-  const rel = relative(base, resolve(base, path));
+    expected = workspacePath(root, base, path),
+    target = await inside(base, expected);
+  const rel = relative(base, expected);
   if (
     rel
       .split(sep)
@@ -40,8 +48,7 @@ export async function workspaceFile(root: string, path: string, max = 20 * 1024 
       )
   )
     throw new Error('Private/configuration files are excluded.');
-  if (target.toLowerCase() !== resolve(base, path).toLowerCase())
-    throw new Error('Linked paths are excluded.');
+  if (!samePath(target, expected)) throw new Error('Linked paths are excluded.');
   let current = base;
   for (const part of rel.split(sep)) {
     current = join(current, part);

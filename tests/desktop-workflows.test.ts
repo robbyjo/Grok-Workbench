@@ -1,13 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, writeFile, readFile, mkdir, rm, stat } from 'node:fs/promises';
+import { mkdtemp, writeFile, readFile, mkdir, rm, stat, symlink } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createServer } from 'node:http';
 import { PDFDocument, StandardFonts } from 'pdf-lib';
 import { zipSync, strToU8 } from 'fflate';
 import { FilePlans } from '../electron/workflows/files';
-import { workspaceFile } from '../electron/workflows/io';
+import { workspaceFile, workspaceDestination } from '../electron/workflows/io';
 import { csvRows, numericPairs, readTable } from '../electron/workflows/tabular';
 import { pdfWorkflow } from '../electron/workflows/pdf';
 import { wav, readWav, editAudio } from '../electron/workflows/audio';
@@ -84,6 +84,37 @@ test('file plans require exact owner/hash, refuse changed/colliding files and un
     await assert.rejects(plans.review('t', collision.id, collision.hash), /Destination exists/);
     assert.equal(await readFile(join(root, 'collision', 'two.txt'), 'utf8'), 'keep');
     await assert.rejects(workspaceFile(root, '../outside'), /ENOENT|leaves/);
+  }));
+
+test('workflow files accept a selected root alias but reject links inside it', async () =>
+  fixture(async (root) => {
+    const actual = join(root, 'actual'),
+      alias = join(root, 'alias');
+    await mkdir(actual);
+    await writeFile(join(actual, 'source.txt'), 'preserved');
+    await symlink(actual, alias, process.platform === 'win32' ? 'junction' : 'dir');
+    assert.equal(
+      (await workspaceFile(alias, join(alias, 'source.txt'))).bytes.toString(),
+      'preserved',
+    );
+    const destination = await workspaceDestination(alias, join(alias, 'organized', 'source.txt'));
+    assert.ok(destination.endsWith(join('organized', 'source.txt')));
+    const plans = new FilePlans();
+    const plan = await plans.preview('t', alias, { paths: ['source.txt'], directory: 'organized' });
+    await plans.review('t', plan.id, plan.hash);
+    const recovered = new FilePlans();
+    await recovered.restore('t', alias, plan.journal);
+    await recovered.review('t', plan.id, plan.hash, true);
+    assert.equal(await readFile(join(actual, 'source.txt'), 'utf8'), 'preserved');
+    await mkdir(join(actual, 'nested'));
+    await writeFile(join(actual, 'nested', 'private.txt'), 'keep');
+    await symlink(
+      join(actual, 'nested'),
+      join(actual, 'linked'),
+      process.platform === 'win32' ? 'junction' : 'dir',
+    );
+    await assert.rejects(workspaceFile(alias, 'linked/private.txt'), /Linked/);
+    await assert.rejects(workspaceDestination(alias, 'linked/new.txt'), /Linked/);
   }));
 test('tabular import preserves quoted cells and rejects missing values and stale formula caches', async () =>
   fixture(async (root) => {
