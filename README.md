@@ -104,10 +104,15 @@ npm test
 npm run test:ui
 npm run package:portable  # compiles the engine and packages the executable
 npm run test:portable     # actual launcher, MCP, PTY and profile relocation
+npm run test:desktop-use:fixture # isolated visual GUI/MCP probe; no live inference
 npm run test:live         # real billable OAuth coding/MCP acceptance
 npx tsx scripts/task-acceptance.ts --run
 npx tsx scripts/media-acceptance.ts --run
 ```
+
+An optional [desktop-use experiment](docs/DESKTOP-USE-PROBE.md) tests screenshot,
+click and typing behavior in a disposable window. Live model trials are explicitly
+invoked and are separate from fixture acceptance and supported app features.
 
 Media acceptance does not change account privacy unless `--temporary-retention` is explicitly supplied after obtaining account-holder consent. It records the original setting and restores/verifies it in `finally`.
 

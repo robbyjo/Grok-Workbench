@@ -20,6 +20,8 @@
     "test:native-integrations": "tsx --test scripts/native-integrations-acceptance.ts",
     "test:github-oauth": "tsx scripts/github-oauth-acceptance.ts --run",
     "test:remote": "tsx scripts/remote-portable.ts",
+    "test:desktop-use": "npm run build:main && tsx scripts/desktop-use-probe.ts",
+    "test:desktop-use:fixture": "npm run build:main && tsx scripts/desktop-use-probe.ts --self-test",
     "runtime": "node scripts/runtime.cjs",
     "engine:build": "node scripts/engine-build.cjs && node scripts/updater-build.cjs",
     "package:portable": "npm run build && npm run engine:build && npm run licenses && electron-builder --win portable --x64 && node scripts/update-manifest.cjs",

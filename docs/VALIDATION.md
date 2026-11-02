@@ -2,6 +2,28 @@
 
 Current source version: **Grok Workbench 0.8.5**, with the pinned Grok Rust library embedded instead of a packaged CLI. The merged release adds experimental Linux and UNTESTED macOS packages; dates below use America/New_York. Earlier sections retain historical version-specific names and results.
 
+## Desktop-use experiment (November 2; separate from the published app)
+
+The [isolated desktop-use probe](DESKTOP-USE-PROBE.md) passed three scripted GUI
+trials and a local-provider transport check through the actual embedded engine.
+Only MCP discovery/dispatch was advertised, and screenshot PNGs reached the
+model endpoint. These fixture results alone make no claim about Grok capability.
+
+After fresh Workbench OAuth sign-in, **Grok 4.7 passed all three real model trials**
+using the local pinned-source binding 0.6.0 addon. Each used six actions and three
+screenshots, had no wrong-button clicks, observed success, and ended normally.
+The last trial handled a button-position swap after typing. Temporary auth/config
+copies were removed; the user's open app and source profile were retained.
+Evidence: `.test-data/desktop-probe-BwBwkg/report.json` and its PNGs. This is basic
+visual GUI evidence in one owned Electron window, not validation of arbitrary OS
+desktop control, other applications, or unattended reliability. The experiment
+does not change the v0.8.5 release/tag/assets or the embedded engine pin.
+
+The main-process build, dedicated runner typecheck and three protocol/scoring
+regressions pass. The complete backend run reports **115 passed, four skipped,
+zero failures** out of 119 tests. No full-app GUI change is included in this
+experiment.
+
 ## 0.8.5 published multi-platform release (November 1)
 
 [Release v0.8.5](https://github.com/robbyjo/Grok-Workbench/releases/tag/v0.8.5) is Latest and targets source `626a93a30818d1c66d8a65ee9a95375d44a32ca7`. The merged branches are accepted by [Windows](https://github.com/robbyjo/Grok-Workbench/actions/runs/41274679777), [Linux](https://github.com/robbyjo/Grok-Workbench/actions/runs/41274679751) and [both Mac architectures](https://github.com/robbyjo/Grok-Workbench/actions/runs/41274680825). The [verified-artifact publisher](https://github.com/robbyjo/Grok-Workbench/actions/runs/41277647210) published only their exact accepted application packages. A [one-time CI dispatcher](https://github.com/robbyjo/Grok-Workbench/actions/runs/41277436028) used GitHub's short-lived job token to start the existing main publisher and [website workflow](https://github.com/robbyjo/Grok-Workbench/actions/runs/41277740697); no stored user credential was read or changed.
