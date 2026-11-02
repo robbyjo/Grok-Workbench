@@ -1,6 +1,18 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron';
 import type { DesktopAPI, DesktopEvent } from '../shared/types';
 const methods = new Set([
+  'desktop-workflows:inkscape',
+  'desktop-workflows:status',
+  'desktop-workflows:grant',
+  'desktop-workflows:render-result',
+  'desktop-workflows:cancel',
+  'desktop-workflows:review-files',
+  'desktop-workflows:browser',
+  'desktop-workflows:submit',
+  'desktop-workflows:comfy',
+  'desktop-workflows:zotero-authorize',
+  'desktop-workflows:zotero-apply',
+  'desktop-workflows:open',
   'application:status',
   'application:health',
   'application:practice',

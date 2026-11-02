@@ -32,10 +32,10 @@ export const applicationTools = [
   {
     name: 'office_create',
     description:
-      'Create a NEW Word DOCX or Excel XLSX using the installed Microsoft Office COM APIs, in this workspace’s unique workbench-output folder. Requires this chat’s Office grant. Does not open/overwrite existing user documents. Excel calculates supplied formulas and returns actual results; optional column chart. Use application_jobs to verify completion.',
+      'Create a NEW Word DOCX, Excel XLSX or PowerPoint PPTX (optional PDF) using installed Microsoft Office COM APIs, in this workspace’s unique workbench-output folder. Requires this chat’s Office grant. Does not open/overwrite existing user documents. Word can embed up to five workspace PNGs. Excel calculates supplied formulas and returns actual results; optional column chart. Use application_jobs to verify completion.',
     inputSchema: object(
       {
-        kind: { type: 'string', enum: ['word', 'spreadsheet'] },
+        kind: { type: 'string', enum: ['word', 'spreadsheet', 'presentation'] },
         title: { type: 'string', maxLength: 300 },
         text: { type: 'string', maxLength: 100000 },
         table: {
@@ -58,8 +58,70 @@ export const applicationTools = [
           ),
         },
         chart: { type: 'boolean' },
+        images: { type: 'array', maxItems: 5, items: { type: 'string', maxLength: 4096 } },
+        slides: {
+          type: 'array',
+          maxItems: 30,
+          items: object({
+            title: { type: 'string', maxLength: 300 },
+            text: { type: 'string', maxLength: 10000 },
+          }),
+        },
+        pdf: { type: 'boolean' },
       },
       ['kind'],
+    ),
+  },
+  {
+    name: 'office_edit',
+    description:
+      'Edit a NEW COPY of a workspace DOCX/XLSX/PPTX using installed Office, preserving the source. Requires Office grant. Word supports literal replacements, anchored comments, appended text and tracked changes (default on). Excel supports typed cell updates, allowlisted formulas and optional chart. Presentation appends slides and can export PDF. Active/external Office content is refused. Inspect application_jobs for actual completion.',
+    inputSchema: object(
+      {
+        kind: { type: 'string', enum: ['word', 'spreadsheet', 'presentation'] },
+        path: { type: 'string', maxLength: 4096 },
+        replacements: {
+          type: 'array',
+          maxItems: 100,
+          items: object({ find: { type: 'string' }, replace: { type: 'string' } }, [
+            'find',
+            'replace',
+          ]),
+        },
+        comments: {
+          type: 'array',
+          maxItems: 100,
+          items: object({ find: { type: 'string' }, text: { type: 'string' } }, ['find', 'text']),
+        },
+        append: { type: 'string', maxLength: 100000 },
+        tracked_changes: { type: 'boolean' },
+        sheet: { type: 'string' },
+        cells: {
+          type: 'array',
+          maxItems: 1000,
+          items: object(
+            { cell: { type: 'string' }, value: { type: ['string', 'number', 'null'] } },
+            ['cell', 'value'],
+          ),
+        },
+        formulas: {
+          type: 'array',
+          maxItems: 100,
+          items: object({ cell: { type: 'string' }, formula: { type: 'string' } }, [
+            'cell',
+            'formula',
+          ]),
+        },
+        chart: { type: 'boolean' },
+        title: { type: 'string' },
+        slides: {
+          type: 'array',
+          maxItems: 30,
+          items: object({ title: { type: 'string' }, text: { type: 'string' } }),
+        },
+        pdf: { type: 'boolean' },
+      },
+      ['kind', 'path'],
     ),
   },
   {

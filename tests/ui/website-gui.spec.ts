@@ -21,7 +21,7 @@ test('website describes the Grok Build GUI in search metadata and fits desktop a
     await expect(page.locator('.download-card')).toHaveCount(3);
     await expect(
       page.getByRole('link', { name: 'Download Windows x64', exact: true }),
-    ).toHaveAttribute('href', /v0\.8\.5\/Grok-Workbench-0\.8\.5-Portable\.exe$/);
+    ).toHaveAttribute('href', /v0\.9\.0\/Grok-Workbench-0\.9\.0-Portable\.exe$/);
     await expect(
       page.getByRole('link', { name: 'Download Ubuntu .deb', exact: true }),
     ).toBeVisible();

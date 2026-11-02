@@ -1,5 +1,5 @@
 const { join } = require('node:path');
-const { mkdirSync, readFileSync, writeFileSync } = require('node:fs');
+const { mkdirSync, readFileSync, writeFileSync, copyFileSync } = require('node:fs');
 const { createHash } = require('node:crypto');
 const { execFileSync } = require('node:child_process');
 if (process.platform !== 'win32') process.exit(0);
@@ -32,6 +32,14 @@ execFileSync(
   { stdio: 'inherit', windowsHide: true },
 );
 const hash = (path) => createHash('sha256').update(readFileSync(path)).digest('hex');
+const documentSource = join(root, 'native/document-worker.ps1'),
+  documentOutput = join(runtime, 'document-worker.ps1');
+copyFileSync(documentSource, documentOutput);
+writeFileSync(
+  join(runtime, 'document-worker.json'),
+  JSON.stringify({ sourceSha256: hash(documentSource), sha256: hash(documentOutput) }, null, 2) +
+    '\n',
+);
 writeFileSync(
   join(runtime, 'desktop-control.json'),
   JSON.stringify({ sourceSha256: hash(source), sha256: hash(output) }, null, 2) + '\n',

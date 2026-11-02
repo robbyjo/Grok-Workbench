@@ -1,5 +1,6 @@
 import { Chess } from 'chess.js';
 import type { Wire } from '../shared/types';
+import { slidesInput } from './workflows/office';
 export function text(value: unknown, limit = 4000) {
   if (typeof value !== 'string' || value.length > limit || value.includes('\0'))
     throw new Error(`Expected text up to ${limit} characters.`);
@@ -7,6 +8,7 @@ export function text(value: unknown, limit = 4000) {
 }
 const finite = (v: unknown) => typeof v === 'number' && Number.isFinite(v) && Math.abs(v) < 1e12;
 export function officeInput(input: Wire) {
+  if (input.kind === 'presentation') return slidesInput(input);
   const title = text(input.title ?? 'Workbench', 300);
   if (input.kind === 'word') {
     const body = text(input.text ?? '', 100000),
@@ -24,7 +26,14 @@ export function officeInput(input: Wire) {
       )
     )
       throw new Error('Word tables require up to 200 equal rows of 1..30 text cells.');
-    return { operation: 'word', title, text: body, table };
+    const images = input.images ?? [];
+    if (
+      !Array.isArray(images) ||
+      images.length > 5 ||
+      images.some((v) => typeof v !== 'string' || v.length > 4096)
+    )
+      throw new Error('Supply up to five workspace PNG images.');
+    return { operation: 'word', title, text: body, table, images };
   }
   if (input.kind !== 'spreadsheet') throw new Error('Choose word or spreadsheet.');
   const headers = input.headers,

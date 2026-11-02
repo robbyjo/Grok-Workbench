@@ -33,6 +33,11 @@ test('packaging seals the final helper bytes after resource signing/copying', as
       JSON.stringify({ sourceSha256: 'preserved-source', sha256: 'before-signing' }),
     );
     await writeFile(join(root, 'resources', 'application-worker.exe'), bytes);
+    await writeFile(join(root, 'resources', 'document-worker.ps1'), bytes);
+    await writeFile(
+      join(root, 'resources', 'document-worker.json'),
+      JSON.stringify({ sourceSha256: 'document-source', sha256: 'before-copy' }),
+    );
     await writeFile(
       join(root, 'resources', 'application-worker.json'),
       JSON.stringify({ sourceSha256: 'application-source', sha256: 'before-signing' }),

@@ -2452,3 +2452,21 @@ pre,
   max-width: 100%;
   vertical-align: middle;
 }
+.application-tools {
+  overflow-wrap: anywhere;
+}
+.application-tools table {
+  width: 100%;
+  table-layout: fixed;
+}
+.application-tools td {
+  overflow-wrap: anywhere;
+  vertical-align: top;
+}
+.application-tools input:not([type='checkbox']),
+.application-tools select {
+  max-width: 100%;
+}
+.application-tools pre {
+  white-space: pre-wrap;
+}

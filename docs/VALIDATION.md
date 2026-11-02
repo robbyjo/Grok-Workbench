@@ -1,6 +1,23 @@
 # Validation record
 
-Current source version: **Grok Workbench 0.8.5**, with the pinned Grok Rust library embedded instead of a packaged CLI. The merged release adds experimental Linux and UNTESTED macOS packages; dates below use America/New_York. Earlier sections retain historical version-specific names and results.
+Current source version: **Grok Workbench 0.9.0**, with the pinned Grok Rust library embedded instead of a packaged CLI. Linux is experimental and macOS is UNTESTED; dates below use America/New_York. Earlier sections retain historical version-specific names and results.
+
+## Desktop workflows 0.9.0 (November 2)
+
+[Setup and limits](DESKTOP-WORKFLOWS.md). All nine categories have bounded implementations on unchanged Grok Build 1.0.45 / binding 0.6.0. Native engine SHA-256 remains `6c327c6e4af4095a08739d9c14200d3bb47fff390a090b9384412a5d48bcd960`.
+
+- Native Word tracked replacements/comments, Excel edits/recalculation/chart and PowerPoint append/PDF passed; original hashes stayed unchanged. PDF forms, page transforms, visible overlays, text/layout extraction and native scanned-PDF/image OCR passed. Evidence: `.test-data/desktop-workflows-VNdNMF/report.json` (individual passes; its then-failing browser download was corrected separately).
+- Native CSV to JMP fit/residual plots and illustrated Office reports passed. Built-in SVG/PNG/PDF and native Inkscape 1.4.4 PNG/vector-PDF exports passed. Native Blender batches and CSL/RIS/cited notes/Word passed; Zotero create/authorize/review uses HTTP protocol fixtures, without touching a personal library.
+- Reviewed file-plan apply/undo passed through the production panel. Separate browser observation, fields, human-reviewed local POST and bounded download passed (`.test-data/desktop-workflows-ZtOX4y/report.json`). Built-in PCM trim/join/normalization passed at sample level. Native ComfyUI EmptyImage/SaveImage passed on a dedicated localhost server (`.test-data/desktop-workflows-tHiQWu/report.json`); no learned model, paid API or custom-node inference is claimed.
+- **Seven live Grok checks passed** through production MCP tools: vectors, PDF forms/extraction, scanned-PDF OCR, audio, research reports, JMP reports and file-plan preview (`.test-data/workstation-live-RXWYfA/report.json`). The first run exposed underspecified nested tool schemas; explicit shape/form/research schemas fixed it. Temporary copied-auth profiles were removed.
+
+Final local automated checks: **140 backend tests passed, four skipped, zero failed**; all **15 desktop UI scenarios passed** (two stale/asynchronous test expectations were corrected and rerun). Build, native helper compilation and strict acceptance-harness typechecks passed. Final native report/research/file-plan/audio/MP3 checks passed in `.test-data/desktop-workflows-GfdDP6/report.json`. Runtime dependency audit reports zero vulnerabilities. The mobile website and native residual plot were visually inspected.
+
+Krita's new batch wrapper also passed against two new 128×128 canvases, with painted previews and verified KRA/PNG exports (`.test-data/desktop-workflows-mgSXcV/report.json`). Only those owned canvases were closed; existing artwork and allowed roots were retained.
+
+Optional Audacity 3.7.9 scripting remains **experimental and native-unvalidated**: its pipes connected but returned no complete command response in the hidden test session. The built-in audio backend and import macro are independent. Native Zotero authorization/writes were not validated against a personal library; protocol fixtures passed. No installation, personal library update or permission-root widening happens automatically.
+
+Windows native applications/OCR remain Windows-only. Historical sections below describe their source state at the time. The 0.8.5 assets remain immutable.
 
 ## Application workflows (November 2; development source)
 
