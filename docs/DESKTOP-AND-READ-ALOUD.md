@@ -1,6 +1,6 @@
 # Windows desktop control and prompt-driven read aloud
 
-Development source after v0.8.5 includes both features on the **unchanged embedded Grok Build 1.0.45 source**, revision `2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8`, binding 0.6.0. They are Workbench-hosted MCP tools, not an undocumented xAI desktop API. The published v0.8.5 packages do not contain them yet.
+Version 0.9.0 includes both features on the **unchanged embedded Grok Build 1.0.45 source**, revision `2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8`, binding 0.6.0. They are Workbench-hosted MCP tools, not an undocumented xAI desktop API.
 
 ## Windows window control
 
@@ -52,3 +52,5 @@ The live command copies only `auth.json` into an isolated test profile, uses dis
 Pass `--speech-only` to test narration independently when Windows input is unavailable. This does not count as a desktop-input pass.
 
 On November 2, 2026, the native bridge passed capture, real Windows click/Unicode input, changed-layout verification, cross-chat rejection, stale-frame rejection and revocation. **Grok 4.7** completed the same task using production MCP/IPC and the native Windows helper. Prompt-driven pasted text, TXT, PDF and DOCX each produced a valid MP3 decoded by the app. These short English samples do not establish pronunciation accuracy, complex-document reading order, every voice, arbitrary-app support or long-document reliability. See [validation](VALIDATION.md).
+
+See [desktop workflows in 0.9.0](DESKTOP-WORKFLOWS.md) for Office editing/slides, PDF/OCR, reports, file organization, the task browser, creative batches, research, audio and vectors.

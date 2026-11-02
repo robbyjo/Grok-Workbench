@@ -17,6 +17,8 @@ import { Narrator } from './narration';
 import { PdfText } from './pdf-text';
 import { WorkbenchTools } from './workbench-tools';
 import { Workstation } from './workstation';
+import { DesktopWorkflows } from './desktop-workflows';
+import { WorkflowRenderer } from './workflows/renderer';
 import { Background } from './background';
 import { RemoteAccess } from './remote';
 import { Providers, providerModel } from './providers';
@@ -103,6 +105,8 @@ let narrator: Narrator;
 let pdfText: PdfText;
 let workbenchTools: WorkbenchTools;
 let workstation: Workstation;
+let desktopWorkflows: DesktopWorkflows;
+let workflowRenderer: WorkflowRenderer;
 const previewWindows = new Set<BrowserWindow>();
 const fileSearches = new Map<string, AbortController>();
 const generating = new Set<string>();
@@ -352,6 +356,60 @@ async function dispatch(method: string, args: Wire) {
     }
   };
   switch (method) {
+    case 'desktop-workflows:status':
+      return desktopWorkflows.status(thread().id);
+    case 'desktop-workflows:inkscape':
+      return desktopWorkflows.configureInkscape(
+        thread().id,
+        string(args.path, 'Inkscape executable', 4096),
+      );
+    case 'desktop-workflows:grant':
+      if (!agents.canStart() || remote.status().running)
+        throw new Error('Stop remote access and wait for workspace operations first.');
+      return desktopWorkflows.grant(thread().id, args.domains);
+    case 'desktop-workflows:render-result':
+      return workflowRenderer.result(args);
+    case 'desktop-workflows:cancel':
+      return desktopWorkflows.cancel(thread().id);
+    case 'desktop-workflows:review-files':
+      return mutate(() =>
+        desktopWorkflows.reviewFiles(
+          thread().id,
+          string(args.planId, 'plan', 100),
+          string(args.hash, 'hash', 100),
+          args.undo === true,
+        ),
+      );
+    case 'desktop-workflows:browser':
+      return desktopWorkflows.openBrowser(thread().id, string(args.url, 'URL', 4096));
+    case 'desktop-workflows:submit':
+      return desktopWorkflows.submitBrowser(thread().id, string(args.reviewId, 'review', 100));
+    case 'desktop-workflows:comfy':
+      return desktopWorkflows.approveComfy(
+        thread().id,
+        string(args.path, 'workflow', 4096),
+        string(args.origin, 'origin', 200),
+      );
+    case 'desktop-workflows:zotero-authorize':
+      return desktopWorkflows.authorizeZotero(thread().id);
+    case 'desktop-workflows:zotero-apply':
+      return desktopWorkflows.applyZotero(thread().id, string(args.planId, 'plan', 100));
+    case 'desktop-workflows:open': {
+      const file = await desktopWorkflows.artifact(
+        thread().id,
+        string(args.jobId, 'job', 100),
+        string(args.name, 'artifact', 100),
+      );
+      if (
+        !/\.(pdf|docx|xlsx|pptx|png|jpg|jpeg|wav|svg|txt|md|csv|json|ris|blend|kra|jmp)$/i.test(
+          file.path,
+        )
+      )
+        throw new Error('This artifact cannot be opened from the panel.');
+      const error = await shell.openPath(file.path);
+      if (error) throw new Error(error);
+      return;
+    }
     case 'application:status':
       return workstation.catalog(thread().id);
     case 'application:health':
@@ -446,6 +504,7 @@ async function dispatch(method: string, args: Wire) {
     case 'remote:status':
       return remote.status();
     case 'remote:start':
+      desktopWorkflows.revoke();
       workstation.revoke();
       desktop.stop();
       return remote.start(args);
@@ -601,6 +660,7 @@ async function dispatch(method: string, args: Wire) {
         if (store.project(id).hidden)
           for (const chat of store.state.threads.filter((t) => t.projectId === id)) {
             workstation.revoke(chat.id);
+            desktopWorkflows.revoke(chat.id);
             desktop.stop(chat.id);
             narrator.stop(chat.id);
             agents.disconnect(chat.id);
@@ -613,6 +673,7 @@ async function dispatch(method: string, args: Wire) {
       if (args.archived === true)
         for (const id of args.ids) {
           workstation.revoke(id);
+          desktopWorkflows.revoke(id);
           desktop.stop(id);
           narrator.stop(id);
           agents.disconnect(id);
@@ -1296,6 +1357,7 @@ async function dispatch(method: string, args: Wire) {
       if (project.hidden) {
         for (const item of store.state.threads.filter((item) => item.projectId === id)) {
           workstation.revoke(item.id);
+          desktopWorkflows.revoke(item.id);
           desktop.stop(item.id);
           narrator.stop(item.id);
           agents.disconnect(item.id);
@@ -1350,6 +1412,7 @@ async function dispatch(method: string, args: Wire) {
         item.archived = args.archived;
         if (item.archived) {
           workstation.revoke(item.id);
+          desktopWorkflows.revoke(item.id);
           desktop.stop(item.id);
           narrator.stop(item.id);
           agents.disconnect(item.id);
@@ -1364,6 +1427,7 @@ async function dispatch(method: string, args: Wire) {
       if (!agents.canStart()) throw new Error('Wait for the current workspace/profile operation.');
       return agents.connect(thread().id);
     case 'agent:disconnect':
+      desktopWorkflows.revoke(thread().id);
       workstation.revoke(thread().id);
       desktop.stop(thread().id);
       return agents.disconnect(thread().id);
@@ -1386,6 +1450,7 @@ async function dispatch(method: string, args: Wire) {
       }
     }
     case 'agent:cancel':
+      desktopWorkflows.cancel(thread().id);
       workstation.cancel(thread().id);
       desktop.stop(thread().id);
       if (taskWorkflows.cancel(thread().id)) return;
@@ -1433,6 +1498,7 @@ async function dispatch(method: string, args: Wire) {
       desktop.stop();
       narrator.stop();
       workstation.revoke();
+      desktopWorkflows.revoke();
       agents.shutdown();
       store.state.settings.executable = executable;
       store.flush();
@@ -1852,11 +1918,29 @@ else {
         await profileStorage.assertCapacity(store.state.settings.profileMiB ?? 4096);
       },
     );
+    workflowRenderer = new WorkflowRenderer(emit);
+    desktopWorkflows = new DesktopWorkflows(
+      app.isPackaged ? process.resourcesPath : join(app.getAppPath(), '.runtime'),
+      (id) => store.thread(id).cwd,
+      workstation,
+      workflowRenderer,
+      assistChanged,
+      (id, on) => {
+        const key = 'workflow:' + id;
+        if (on) generating.add(key);
+        else generating.delete(key);
+      },
+      async () => {
+        if (!agents.canStart()) throw new Error('Wait for workspace operations.');
+        await profileStorage.assertCapacity(store.state.settings.profileMiB ?? 4096);
+      },
+    );
     workbenchTools = new WorkbenchTools(
       desktop,
       narrator,
       () => agents.canStart() && !generating.size,
       workstation,
+      desktopWorkflows,
     );
     await workbenchTools.start();
     agents.sessionMcpServers = (id) =>
@@ -2016,6 +2100,7 @@ else {
     pdfText?.close();
     workbenchTools?.close();
     workstation?.close();
+    desktopWorkflows?.close();
     background?.stop();
     remote?.stop();
     workspaceWatch.close();

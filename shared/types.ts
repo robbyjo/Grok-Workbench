@@ -141,6 +141,13 @@ export interface TextDocument {
 }
 export type DesktopEvent =
   | { type: 'assist-changed' }
+  | {
+      type: 'desktop-render';
+      id: string;
+      kind: 'pdf' | 'svg' | 'audio';
+      data: string;
+      options: Wire;
+    }
   | { type: 'narration-pdf'; id: string; data: string; start: number; end?: number }
   | { type: 'background-changed' }
   | { type: 'question'; question: UserQuestion }

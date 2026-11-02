@@ -3,7 +3,9 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import './styles.css';
 import { installPdfNarration } from './pdf-narration';
+import { installWorkflowRenderer } from './workflow-renderer';
 installPdfNarration(window.desktop);
+installWorkflowRenderer(window.desktop);
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <App />

@@ -10,6 +10,8 @@ import { join, resolve } from 'node:path';
 import assert from 'node:assert/strict';
 import { Practice } from '../electron/practice';
 import type { Wire } from '../shared/types';
+import { PDFDocument } from 'pdf-lib';
+import { wav } from '../electron/workflows/audio';
 const homeIndex = process.argv.indexOf('--home');
 if (!process.argv.includes('--run') || homeIndex < 0)
   throw new Error('Use --run --home ABSOLUTE_AUTHENTICATED_PROFILE for billable live acceptance.');
@@ -20,7 +22,9 @@ const domains = (
 ).split(',');
 if (
   !domains.length ||
-  domains.some((d) => !['office', 'blender', 'jmp', 'krita', 'shopping', 'chess'].includes(d))
+  domains.some(
+    (d) => !['office', 'blender', 'jmp', 'krita', 'shopping', 'chess', 'workflows'].includes(d),
+  )
 )
   throw new Error('Unknown live application domain.');
 const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -131,6 +135,110 @@ async function main() {
             .slice(before)
             .every((j: Wire) => ['failed', 'complete', 'stopped'].includes(j.state)),
       );
+    if (domains.includes('workflows')) {
+      await call('desktop-workflows:grant', {
+        domains: ['pdf', 'files', 'browser', 'reports', 'creative', 'research', 'audio', 'vector'],
+      });
+      await writeFile(join(cwd, 'data.csv'), 'x,y\n1,3.1\n2,4.9\n3,7.2\n4,8.8\n5,11.1\n6,12.9\n');
+      await writeFile(join(cwd, 'organize-a.txt'), 'Owned file fixture');
+      await writeFile(join(cwd, 'organize-b.txt'), 'Owned file fixture');
+      const samples = Buffer.alloc(16000);
+      for (let n = 0; n < 8000; n++)
+        samples.writeInt16LE(Math.round(Math.sin(n / 10) * 3000), n * 2);
+      await writeFile(join(cwd, 'tone.wav'), wav(samples, 8000, 1));
+      const pdf = await PDFDocument.create(),
+        page = pdf.addPage([500, 500]);
+      page.drawText('WORKBENCH PDF FIXTURE', { x: 30, y: 400 });
+      pdf
+        .getForm()
+        .createTextField('reviewer')
+        .addToPage(page, { x: 30, y: 200, width: 200, height: 30 });
+      await writeFile(join(cwd, 'form.pdf'), await pdf.save());
+      await writeFile(
+        join(cwd, 'library.json'),
+        JSON.stringify([
+          {
+            id: 'fixture',
+            title: 'Workbench fixture reference',
+            author: [{ family: 'Example', given: 'A' }],
+            issued: { 'date-parts': [[2026]] },
+          },
+        ]),
+      );
+      const workflowGoal = async (name: string, goal: string, count = 1) => {
+        const before = (await call('desktop-workflows:status')).jobs.length;
+        await prompt(
+          goal +
+            ' Use workflow_status with wait_ms=10000 while a job is running; inspect actual completion and report output paths. Do not use other applications/tools.',
+        );
+        const result = await until(
+          () => call('desktop-workflows:status'),
+          (v) =>
+            v.jobs.length >= before + count &&
+            v.jobs
+              .slice(before)
+              .every((j: Wire) => ['complete', 'failed', 'stopped'].includes(j.state)),
+          240000,
+        );
+        const jobs = result.jobs.slice(before);
+        assert.ok(jobs.length >= count);
+        for (const job of jobs) assert.equal(job.state, 'complete', job.error);
+        report.checks.push({
+          name: 'live-Grok-workflow-' + name,
+          passed: true,
+          jobs: jobs.map((j: Wire) => ({ tool: j.tool, files: j.files })),
+        });
+        return jobs;
+      };
+      const vector = (
+        await workflowGoal(
+          'vector',
+          'Use vector_graphic to create a NEW 1000x240 editable SVG with a white background and black text WORKBENCH OCR 314159 at x=30,y=120,font_size=54. Export PNG at 1000x240.',
+        )
+      )[0];
+      const vectorPNG = vector.files.find((f: Wire) => f.name === 'drawing-1000x240.png');
+      assert.ok(vectorPNG);
+      const scan = await PDFDocument.create(),
+        scanPNG = await scan.embedPng(await readFile(vectorPNG.path)),
+        scanPage = scan.addPage([1000, 240]);
+      scanPage.drawImage(scanPNG, { x: 0, y: 0, width: 1000, height: 240 });
+      await writeFile(join(cwd, 'scan.pdf'), await scan.save());
+      await workflowGoal(
+        'PDF',
+        'Use document_workflow to fill the reviewer text field in form.pdf with Grok verified, preserving the source. Then use document_workflow to extract page 1 of form.pdf to text. These are two separate jobs; finish the first before starting the second.',
+        2,
+      );
+      const ocr = (
+        await workflowGoal(
+          'OCR',
+          'Use document_workflow action=ocr on scan.pdf page 1. This is an image-only PDF; inspect the generated extracted.txt and report the recognized marker.',
+        )
+      )[0];
+      assert.match(
+        await readFile(ocr.files.find((f: Wire) => f.name === 'extracted.txt').path, 'utf8'),
+        /314159/,
+      );
+      await workflowGoal(
+        'audio',
+        'Use audio_edit on tone.wav twice, trims [0.25,0.75] and [0,0.5], normalize_db=-6, built-in backend. Verify the actual exported duration is one second.',
+      );
+      await workflowGoal(
+        'research',
+        'Use research_library on library.json. Add a supplied annotation for reference fixture, page 1, quote WORKBENCH PDF FIXTURE, note This is a test fixture heading. Export CSL/RIS, cited notes and a Word bibliography. Do not contact Zotero or invent sources.',
+      );
+      await workflowGoal(
+        'report',
+        'Use report_create on data.csv, columns x and y, title Grok verified scientific report. Include an Excel workbook and PowerPoint/PDF summary. Verify native coefficients and inspect actual report artifacts.',
+      );
+      await prompt(
+        'Use file_organize to PREVIEW organization of organize-a.txt and organize-b.txt into organized, with prefix reviewed-. Identify their duplicate content. Stop for human review; do not move/delete files.',
+      );
+      const plans = (await call('desktop-workflows:status')).plans;
+      assert.equal(plans.length, 1);
+      assert.equal(plans[0].state, 'preview');
+      assert.equal(await readFile(join(cwd, 'organize-a.txt'), 'utf8'), 'Owned file fixture');
+      report.checks.push({ name: 'live-Grok-workflow-file-preview', passed: true });
+    }
     for (const [domain, goal, kind, count] of [
       [
         'office',

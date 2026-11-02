@@ -72,8 +72,41 @@ test('application tools are opt-in, practice stays local and disconnect revokes 
       .getByLabel('Application task starter', { exact: true })
       .selectOption({ label: 'JMP' });
     await expect(page.getByLabel('Application task', { exact: true })).toHaveValue(/jmp_analyze/);
+    await page.getByText('Documents, browser & desktop workflows', { exact: true }).click();
+    const workflowLabels = [
+      'PDF & OCR',
+      'File organization',
+      'Task browser',
+      'Scientific reports',
+      'Creative batches',
+      'Research libraries',
+      'Audio editing',
+      'Vector graphics',
+    ];
+    for (const label of workflowLabels) {
+      const grant = page.getByRole('checkbox', { name: label, exact: true });
+      await expect(grant).not.toBeChecked();
+      await grant.click();
+      await expect(grant).toBeChecked();
+    }
+    await expect
+      .poll(() =>
+        page.evaluate(
+          async () =>
+            (await window.desktop.call('desktop-workflows:status', { id: 't' })).granted.length,
+        ),
+      )
+      .toBe(8);
+    await page
+      .getByLabel('Desktop workflow starter', { exact: true })
+      .selectOption({ label: 'File organization' });
+    await expect(page.getByLabel('Desktop workflow task', { exact: true })).toHaveValue(
+      /preview.*review\/apply/s,
+    );
     await page.evaluate(() => window.desktop.call('agent:disconnect', { id: 't' }));
     await expect(office).not.toBeChecked();
+    for (const label of workflowLabels)
+      await expect(page.getByRole('checkbox', { name: label, exact: true })).not.toBeChecked();
   } finally {
     await app.close();
   }

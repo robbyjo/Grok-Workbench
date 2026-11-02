@@ -20,6 +20,8 @@ import type { Wire } from '../shared/types';
 import { Practice } from './practice';
 import { unzipSync } from 'fflate';
 import { previewFile } from './document-preview';
+import { officeEditInput, officeSource } from './workflows/office';
+import { workspaceFile } from './workflows/io';
 
 export type Application = 'office' | 'blender' | 'jmp' | 'krita';
 export class Workstation {
@@ -48,6 +50,7 @@ export class Workstation {
     const paths: Record<string, string[]> = {
       word: [join(pf, 'Microsoft Office/root/Office16/WINWORD.EXE')],
       excel: [join(pf, 'Microsoft Office/root/Office16/EXCEL.EXE')],
+      powerpoint: [join(pf, 'Microsoft Office/root/Office16/POWERPNT.EXE')],
       jmp: [join(pf, 'SAS/JMP/16/jmp.exe')],
       krita: [join(pf, 'Krita (x64)/bin/krita.exe')],
       lucas: [join(local, 'Programs/LucasChessR/bin/LucasR.exe')],
@@ -77,11 +80,13 @@ export class Workstation {
       granted: [...(this.grants.get(id) ?? [])],
       kritaDocuments: [...(this.documents.get(id) ?? [])],
       audit: this.audit.filter((a) => a.threadId === id),
-      applications: ['word', 'excel', 'blender', 'krita', 'jmp', 'lucas'].map((name) => ({
-        name,
-        installed: !!this.executable(name),
-        path: this.executable(name),
-      })),
+      applications: ['word', 'excel', 'powerpoint', 'blender', 'krita', 'jmp', 'lucas'].map(
+        (name) => ({
+          name,
+          installed: !!this.executable(name),
+          path: this.executable(name),
+        }),
+      ),
       jobs: this.jobs.filter((j) => j.threadId === id).map((j) => ({ ...j, files: [...j.files] })),
     };
   }
@@ -131,6 +136,7 @@ export class Workstation {
       'application_jobs',
       'application_preview',
       'office_create',
+      'office_edit',
       'blender_create',
       'jmp_analyze',
       'krita_tools',
@@ -187,12 +193,18 @@ export class Workstation {
       return this.wrap(result);
     }
     if (name === 'krita_tools') return this.kritaTool(id, input);
-    const app = name === 'office_create' ? 'office' : name === 'blender_create' ? 'blender' : 'jmp';
+    const app = name.startsWith('office_')
+      ? 'office'
+      : name === 'blender_create'
+        ? 'blender'
+        : 'jmp';
     this.assert(id, app);
     if (this.current) throw new Error('Wait for the active application job or cancel it first.');
     const data =
       app === 'office'
-        ? officeInput(input)
+        ? name === 'office_edit'
+          ? officeEditInput(input)
+          : officeInput(input)
         : app === 'blender'
           ? blenderInput(input)
           : regressionInput(input);
@@ -243,14 +255,45 @@ export class Workstation {
       job.directory = root;
       let exe: string | undefined, args: string[], input: Wire;
       if (job.application === 'office') {
-        if (!this.executable(data.operation === 'word' ? 'word' : 'excel'))
+        if (
+          !this.executable(
+            data.operation === 'word'
+              ? 'word'
+              : data.operation === 'powerpoint'
+                ? 'powerpoint'
+                : 'excel',
+          )
+        )
           throw new Error(
             'Microsoft Word/Excel was not found in the supported Office installation path.',
           );
         input = {
           ...data,
-          path: join(root, data.operation === 'word' ? 'document.docx' : 'workbook.xlsx'),
+          path: join(
+            root,
+            data.operation === 'word'
+              ? 'document.docx'
+              : data.operation === 'powerpoint'
+                ? 'presentation.pptx'
+                : 'workbook.xlsx',
+          ),
         };
+        if (data.source) {
+          const source = await officeSource(this.cwd(job.threadId), root, data.source);
+          input.source = source.path;
+          job.sourceSha256 = source.sha256;
+        }
+        if (data.images?.length) {
+          input.images = [];
+          for (const [index, path] of data.images.entries()) {
+            const image = await workspaceFile(this.cwd(job.threadId), path, 8 * 1024 * 1024);
+            if (image.bytes.subarray(0, 8).toString('hex') !== '89504e470d0a1a0a')
+              throw new Error('Office report images must be PNG.');
+            const copied = join(root, `image-${index}.png`);
+            await writeFile(copied, image.bytes, { flag: 'wx' });
+            input.images.push(copied);
+          }
+        }
         exe = this.worker();
         args = [join(root, 'input.json')];
       } else if (job.application === 'blender') {
@@ -298,7 +341,7 @@ export class Workstation {
               const owned = JSON.parse(line).ownedProcess;
               if (
                 owned &&
-                ['WINWORD', 'EXCEL'].includes(owned.name) &&
+                ['WINWORD', 'EXCEL', 'POWERPNT'].includes(owned.name) &&
                 Number.isInteger(owned.pid) &&
                 owned.pid > 0 &&
                 /^\d+$/.test(owned.started)
@@ -340,10 +383,17 @@ export class Workstation {
         if (reply.error) throw new Error(reply.error);
         job.result = reply.result;
         const entries = unzipSync(await readFile(input.path));
-        const required = data.operation === 'word' ? 'word/document.xml' : 'xl/workbook.xml';
+        const required =
+          data.operation === 'word'
+            ? 'word/document.xml'
+            : data.operation === 'powerpoint'
+              ? 'ppt/presentation.xml'
+              : 'xl/workbook.xml';
         if (!entries[required]?.length || !entries['[Content_Types].xml']?.length)
           throw new Error('Office output is not a complete OpenXML package.');
         job.files = [{ name: basename(input.path), path: input.path }];
+        if (data.operation === 'powerpoint' && data.pdf)
+          job.files.push({ name: 'presentation.pdf', path: join(root, 'presentation.pdf') });
       } else if (job.application === 'blender') {
         job.result = JSON.parse(await readFile(join(root, 'scene.json'), 'utf8'));
         job.files = ['scene.blend', 'scene.png', 'scene.json'].map((name) => ({
@@ -443,8 +493,8 @@ export class Workstation {
     const canonical = await realpath(file.path);
     if (
       canonical !== file.path ||
-      !['.docx', '.xlsx', '.blend', '.png', '.csv', '.jmp', '.pgn', '.json'].some((ext) =>
-        file.path.toLowerCase().endsWith(ext),
+      !['.docx', '.xlsx', '.pptx', '.pdf', '.blend', '.png', '.csv', '.jmp', '.pgn', '.json'].some(
+        (ext) => file.path.toLowerCase().endsWith(ext),
       )
     )
       throw new Error('Artifact changed or cannot be opened from this panel.');
@@ -478,7 +528,7 @@ export class Workstation {
           {
             protocolVersion: '2024-11-05',
             capabilities: {},
-            clientInfo: { name: 'grok-workbench', version: '0.8.5' },
+            clientInfo: { name: 'grok-workbench', version: '0.9.0' },
           },
           60000,
         );

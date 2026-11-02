@@ -1,6 +1,6 @@
 # Office, shopping, art, science and chess
 
-Development source after v0.8.5 adds these Workbench-hosted tools on the unchanged embedded Grok Build **1.0.45** source, revision `2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8` (binding 0.6.0). The published v0.8.5 binaries do not include these additions. They do not depend on an undocumented Grok desktop API.
+Version 0.9.0 includes these Workbench-hosted tools on the unchanged embedded Grok Build **1.0.45** source, revision `2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8` (binding 0.6.0). They do not depend on an undocumented Grok desktop API.
 
 ## Start a task
 
@@ -60,3 +60,5 @@ npm run test:workstation:live -- --home 'ABSOLUTE\AUTHENTICATED\GROK\PROFILE' --
 ```
 
 The native tests require the corresponding installed applications. The Krita save test creates a uniquely named scratch directory beneath the already allowed root, saves/copies its new KRA/PNG, closes only its own document and removes only that scratch directory. Live tests use billable model requests, a temporary auth copy and a separate browser profile. They never use personal retailer accounts, place orders or join online games. Temporary Grok auth/config homes are removed after shutdown. Each live prompt has a ten-minute deadline; mutation timeouts are not retried. Reports stay under `.test-data/workstation-*`. See [validation evidence](VALIDATION.md) for tested versions, results and remaining limits.
+
+See [desktop workflows in 0.9.0](DESKTOP-WORKFLOWS.md) for Office editing/slides, PDF/OCR, reports, file organization, the task browser, creative batches, research, audio and vectors.

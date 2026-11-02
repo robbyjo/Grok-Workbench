@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { Wire } from '../shared/types';
+import DesktopWorkflowsPanel from './DesktopWorkflowsPanel';
 const samples = [
   [
     'Office',
@@ -185,6 +186,7 @@ export default function WorkstationPanel({ id }: { id: string }) {
             ))}
           </article>
         ))}
+      <DesktopWorkflowsPanel id={id} />
       {error && <p role="alert">{error}</p>}
     </details>
   );

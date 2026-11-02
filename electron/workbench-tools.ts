@@ -7,6 +7,8 @@ import type { Narrator } from './narration';
 import { workbenchTools } from './workbench-tool-schema';
 import { applicationTools } from './application-schema';
 import type { Workstation } from './workstation';
+import type { DesktopWorkflows } from './desktop-workflows';
+import { desktopWorkflowTools } from './workflows/schema';
 
 export class WorkbenchTools {
   private server?: Server;
@@ -17,6 +19,7 @@ export class WorkbenchTools {
     private narrator: Narrator,
     private allowed: (id: string) => boolean = () => true,
     private workstation?: Workstation,
+    private workflows?: DesktopWorkflows,
   ) {}
   async start() {
     const server = createServer(async (req, res) => {
@@ -41,6 +44,7 @@ export class WorkbenchTools {
                 tools: [
                   ...workbenchTools(process.platform === 'win32'),
                   ...(this.workstation ? applicationTools : []),
+                  ...(this.workflows ? desktopWorkflowTools : []),
                 ],
               }
             : await this.invoke(id, input.name, input.input);
@@ -87,13 +91,24 @@ export class WorkbenchTools {
     const schema = [
       ...workbenchTools(process.platform === 'win32'),
       ...(this.workstation ? applicationTools : []),
+      ...(this.workflows ? desktopWorkflowTools : []),
     ].find((t) => t.name === name)?.inputSchema;
     if (!schema || Object.keys(input).some((k) => !Object.hasOwn(schema.properties, k)))
       throw new Error('Unknown tool or argument.');
     let value: any;
+    if (this.workflows?.handles(name)) {
+      if (
+        !['workflow_status', 'workflow_artifact', 'browser_view', 'zotero_read'].includes(name) &&
+        !this.allowed(id)
+      )
+        throw new Error('Wait for the current workspace/application workflow.');
+      return this.workflows.invoke(id, name, input);
+    }
     if (this.workstation?.handles(name)) {
       if (
-        ['office_create', 'blender_create', 'jmp_analyze', 'krita_tools'].includes(name) &&
+        ['office_create', 'office_edit', 'blender_create', 'jmp_analyze', 'krita_tools'].includes(
+          name,
+        ) &&
         !this.allowed(id)
       )
         throw new Error('Wait for the current workspace/application operation.');
