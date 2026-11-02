@@ -734,9 +734,29 @@ async function main() {
         const output = await readFile(
           result.files.find((f: Wire) => f.name === 'audacity-export.wav').path,
         );
-        assert.equal(readWav(output).frames, 8000);
+        const decoded = readWav(output);
+        assert.equal(decoded.channels, 1);
+        assert.ok(Math.abs(decoded.frames / decoded.rate - 1) < 0.001);
+        let peak = 0,
+          crossings = 0,
+          previous = 0;
+        for (let i = 0; i < decoded.data.length; i += 2) {
+          const sample = decoded.data.readInt16LE(i);
+          peak = Math.max(peak, Math.abs(sample));
+          if (sample >= 0 && previous < 0) crossings++;
+          previous = sample;
+        }
+        assert.ok(Math.abs(20 * Math.log10(peak / 32768) + 6) < 0.05);
+        assert.ok(Math.abs(crossings - 200) <= 1);
+        const actual = JSON.parse(result.result);
+        assert.equal(actual.rate, decoded.rate);
+        assert.equal(actual.sourcePreview.rate, 8000);
+        assert.equal(actual.peakAfter, peak / 32768);
         return {
           files: result.files,
+          rate: decoded.rate,
+          seconds: decoded.frames / decoded.rate,
+          peakDb: 20 * Math.log10(peak / 32768),
           scope: 'Dedicated owned Audacity 3.7.9 project; original profiles preserved.',
         };
       });

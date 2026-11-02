@@ -539,6 +539,14 @@ export class DesktopWorkflows {
         ),
       );
       let backend: Wire = { backend: 'Workbench PCM editing' };
+      let summary: Wire = {
+        seconds: audio.seconds,
+        rate: audio.rate,
+        channels: audio.channels,
+        gain: audio.gain,
+        peakBefore: audio.peakBefore,
+        peakAfter: audio.peakAfter,
+      };
       if (input.backend === 'audacity') {
         const path = join(out, 'audacity-export.wav');
         if (process.platform !== 'win32')
@@ -564,21 +572,28 @@ export class DesktopWorkflows {
           (await this.command(helper, [request], signal, 100000)).trim().split('\n').at(-1)!,
         );
         if (reply.error) throw new Error(reply.error);
-        backend = reply.result;
         const source = await workspaceFile(root, path, 40 * 1024 * 1024);
-        readWav(source.bytes);
+        const exported = readWav(source.bytes);
+        let peak = 0;
+        for (let i = 0; i < exported.data.length; i += 2)
+          peak = Math.max(peak, Math.abs(exported.data.readInt16LE(i)));
+        backend = {
+          ...reply.result,
+          sourcePreview: { name: 'edited.wav', ...summary },
+        };
+        summary = {
+          seconds: exported.frames / exported.rate,
+          rate: exported.rate,
+          channels: exported.channels,
+          peakAfter: peak / 32768,
+        };
         files.push({ name: 'audacity-export.wav', path, bytes: source.bytes.length });
       }
       return {
         files,
         result: {
           ...backend,
-          seconds: audio.seconds,
-          rate: audio.rate,
-          channels: audio.channels,
-          gain: audio.gain,
-          peakBefore: audio.peakBefore,
-          peakAfter: audio.peakAfter,
+          ...summary,
         },
       };
     }
