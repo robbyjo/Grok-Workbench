@@ -50,6 +50,7 @@ export class Agents {
   canConnect = () => true;
   beforeWork = async () => {};
   beforePrompt = async (_id: string) => {};
+  sessionMcpServers: (id: string) => Wire[] = () => [];
   private draining = new Set<string>();
   private connections = new Map<string, Connection>();
   private connecting = new Map<string, Promise<Wire>>();
@@ -296,7 +297,7 @@ export class Agents {
         {
           ...(thread.sessionId ? { sessionId: thread.sessionId } : {}),
           cwd: thread.cwd,
-          mcpServers: [],
+          mcpServers: this.sessionMcpServers(id),
           ...(savedPermissionMode(thread) !== undefined
             ? {
                 _meta: {
@@ -312,6 +313,23 @@ export class Agents {
         if (typeof result.sessionId !== 'string')
           throw new Error('Grok did not return a session ID.');
         thread.sessionId = result.sessionId;
+      }
+      if (this.sessionMcpServers(id).length) {
+        let ready = false;
+        for (let attempt = 0; attempt < 60; attempt++) {
+          const response = await connection.rpc.request('_x.ai/mcp/list', {
+            sessionId: thread.sessionId,
+          });
+          if ((response.result ?? response).sessionMcpResolved === true) {
+            ready = true;
+            break;
+          }
+          await new Promise((resolve) => setTimeout(resolve, 250));
+        }
+        if (!ready)
+          throw new Error(
+            'Workbench MCP tools did not finish starting. Disconnect and reconnect this chat.',
+          );
       }
       thread.session = {
         ...result,
@@ -421,6 +439,11 @@ export class Agents {
     this.store.touch();
     const prompt: Wire[] = [{ type: 'text', text }];
     for (const attachment of attachments) {
+      if (attachment.id)
+        prompt.push({
+          type: 'text',
+          text: `Workbench attachment metadata: ${JSON.stringify({ name: attachment.name, asset_id: attachment.id })}. The read_aloud tool can use this asset_id directly.`,
+        });
       if (attachment.data && attachment.mimeType?.startsWith('image/'))
         prompt.push({ type: 'image', data: attachment.data, mimeType: attachment.mimeType });
       else if (attachment.mimeType && attachment.mimeType !== 'text/plain') {

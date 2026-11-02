@@ -23,7 +23,9 @@
     "test:desktop-use": "npm run build:main && tsx scripts/desktop-use-probe.ts",
     "test:desktop-use:fixture": "npm run build:main && tsx scripts/desktop-use-probe.ts --self-test",
     "runtime": "node scripts/runtime.cjs",
-    "engine:build": "node scripts/engine-build.cjs && node scripts/updater-build.cjs",
+    "engine:build": "node scripts/engine-build.cjs && node scripts/updater-build.cjs && node scripts/desktop-build.cjs",
+    "desktop:build": "node scripts/desktop-build.cjs",
+    "test:assist": "npm run build && tsx scripts/assist-acceptance.ts",
     "package:portable": "npm run build && npm run engine:build && npm run licenses && electron-builder --win portable --x64 && node scripts/update-manifest.cjs",
     "package:win": "npm run build && npm run engine:build && npm run licenses && electron-builder --win nsis --x64",
     "package:dir": "npm run build && npm run engine:build && npm run licenses && electron-builder --win --x64 --dir",
@@ -66,6 +68,7 @@
     "wait-on": "^9.0.4"
   },
   "build": {
+    "afterPack": "scripts/desktop-after-pack.cjs",
     "appId": "dev.grokdesktop.app",
     "productName": "Grok Workbench",
     "directories": {
@@ -94,6 +97,14 @@
       }
     ],
     "extraResources": [
+      {
+        "from": ".runtime/desktop-control.exe",
+        "to": "desktop-control.exe"
+      },
+      {
+        "from": ".runtime/desktop-control.json",
+        "to": "desktop-control.json"
+      },
       {
         "from": ".runtime/updater-launcher.exe",
         "to": "updater-launcher.exe"

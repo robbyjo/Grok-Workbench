@@ -7,6 +7,8 @@ let alwaysApprove = false;
 let autoMode = false;
 let initialModeMeta;
 const modeChanges = [];
+let clientMcpServers = [],
+  mcpPolls = 0;
 const send = (value) => process.stdout.write(JSON.stringify({ jsonrpc: '2.0', ...value }) + '\n');
 const result = (id, result) => send({ id, result });
 const update = (update, id = sessionId) =>
@@ -64,6 +66,7 @@ createInterface({ input: process.stdin }).on('line', (line) => {
       authMethods: [{ id: 'fixture-auth', name: 'Fixture login' }],
     });
   } else if (message.method === 'session/new' || message.method === 'session/load') {
+    clientMcpServers = message.params.mcpServers;
     initialModeMeta = message.params._meta;
     if (typeof message.params._meta?.yoloMode === 'boolean')
       alwaysApprove = message.params._meta.yoloMode;
@@ -113,6 +116,17 @@ createInterface({ input: process.stdin }).on('line', (line) => {
     });
   } else if (message.method === 'session/prompt') {
     promptId = message.id;
+    if (scenario === 'workbench-mcp') {
+      update({
+        sessionUpdate: 'agent_message_chunk',
+        content: {
+          type: 'text',
+          text: JSON.stringify({ clientMcpServers, mcpPolls, prompt: message.params.prompt }),
+        },
+      });
+      result(promptId, { stopReason: 'end_turn' });
+      return;
+    }
     if (scenario === 'questions' || scenario === 'questions-prefixed') {
       send({
         id: 904,
@@ -203,6 +217,8 @@ createInterface({ input: process.stdin }).on('line', (line) => {
     });
   } else if (message.method === 'session/cancel') {
     if (scenario !== 'unresponsive' && promptId) result(promptId, { stopReason: 'cancelled' });
+  } else if (message.method === '_x.ai/mcp/list') {
+    result(message.id, { sessionMcpResolved: ++mcpPolls > 1, servers: clientMcpServers });
   } else if (message.method === 'fixture/echo') {
     // Verify UTF-8 and framing across arbitrary stdout chunk boundaries.
     const output =

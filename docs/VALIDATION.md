@@ -2,6 +2,20 @@
 
 Current source version: **Grok Workbench 0.8.5**, with the pinned Grok Rust library embedded instead of a packaged CLI. The merged release adds experimental Linux and UNTESTED macOS packages; dates below use America/New_York. Earlier sections retain historical version-specific names and results.
 
+## Desktop bridge and read aloud (November 2; development source)
+
+[Implementation and usage](DESKTOP-AND-READ-ALOUD.md). The engine pin, native binding and Cargo lockfile remain unchanged. This work does not alter the published v0.8.5 release.
+
+Production IPC/MCP acceptance passed using an isolated copy of the freshly authenticated Workbench profile. The native C# bridge captured the disposable window, exposed ten accessibility controls, delivered actual Windows mouse/Unicode input, handled a button-position swap, rejected cross-chat and stale-frame actions, and refused calls after Stop. With the same bridge, **Grok 4.7** completed the disposable task using the production MCP service. This differs from the earlier experiment, which injected Electron events directly.
+
+Prompt-driven pasted text, a TXT file, a PDF text layer and a DOCX each produced one valid MP3, respectively 46,848 / 36,480 / 51,840 / 41,856 bytes. Each decoded in the renderer’s audio element. PDF extraction used the actual renderer PDF.js path. Evidence: `.test-data/assist-mHuTEG/report.json`, `native-initial.png`, `native-final.png` and `read-aloud-ui.png`. Authentication/config copies were removed after shutdown and the original open app was preserved. These are short English samples, not transcription-based pronunciation validation or arbitrary-app/long-document acceptance.
+
+The first input attempt correctly refused to act while Windows reported no foreground input window. After the user unlocked the desktop, native and live-model input passed. The live speech test also caught a missing native argument default; narration now calls the existing validated `generation()` adapter, covered by regression assertions.
+
+Final speech/UI acceptance: `.test-data/assist-9LJbuj/report.json` passed all four source types again, verified playback pause/resume, narrated an attached DOCX using its model-visible asset ID, and exported its 41,856-byte MP3 through production IPC. The latest-player/previous-readings layout was visually inspected. The first UI run exposed a draft-persistence polling assertion that dereferenced state before the debounced save completed. The assertion now waits safely; its targeted rerun and a subsequent **14/14 full UI run** passed. Final backend regressions report **124 passed, four skipped, zero failures** out of 128 tests, including preparation-time pause, quota admission, cancellation during window selection and sealing the copied helper checksum. Full logs: `.test-data/assist-final-backend.log`, `.test-data/assist-final-ui.log`.
+
+After the successful live desktop run, final native cleanup added cancellation epochs, atomic mouse-down/up delivery and an opaque window stamp to reject recycled handles. The helper compiles and the final code still captures the owned window; a fresh input rerun (`.test-data/assist-JkUy0K/report.json`) is pending because Windows again refused to provide a foreground input target. Do not treat the earlier live pass as a fresh input pass for these last guards. Arbitrary apps, elevated apps, multi-monitor DPI behavior, long documents, non-English speech and Linux/macOS remain outside this acceptance.
+
 ## Desktop-use experiment (November 2; separate from the published app)
 
 The [isolated desktop-use probe](DESKTOP-USE-PROBE.md) passed three scripted GUI

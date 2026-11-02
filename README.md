@@ -60,6 +60,8 @@ When an approval offers **“Yes, and don't ask again for anything”**, selecti
 
 ## Media and attachments
 
+**Development source after v0.8.5:** [Windows desktop control and prompt-driven read aloud](docs/DESKTOP-AND-READ-ALOUD.md) use the existing embedded engine. Choose one window in **Desktop & read aloud** for experimental desktop actions, or ask Grok to read text, a PDF or Word DOCX aloud. Live native-window and four speech-source checks passed. These features are not in the published v0.8.5 binaries yet; scanned PDFs need OCR and older `.doc` files need conversion.
+
 Use **Media** to generate images, speech or 1–15 second video, preview images, and play audio/video in the GUI. Export, attach or delete stored outputs. Sound generation currently means text-to-speech; general music and sound-effect generation are not implemented. Video uses the upstream 480p generation client. API-key/provider permissions determine available services.
 
 Image, speech and video generation/playback passed with real **OAuth**. Video acceptance temporarily enabled account coding-data retention with explicit user consent, then restored and verified the original zero-data-retention setting. Video access can be blocked by zero-data-retention policy; the GUI shows that error and offers explicit account privacy controls. It does not silently change privacy. Protected remote-bucket video output is not downloaded by this GUI.

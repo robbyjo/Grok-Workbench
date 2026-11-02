@@ -64,6 +64,44 @@ function setup(scenario = 'normal') {
   );
   return { folder, store, thread, agents, events, rpcs };
 }
+test('host MCP session injection waits for discovery and attachment narration IDs reach the model', async () => {
+  const { agents, thread, store } = setup('workbench-mcp');
+  const servers = [
+    {
+      name: 'workbench',
+      command: 'fixture',
+      args: ['literal argument'],
+      env: [{ name: 'FIXTURE', value: 'only-test' }],
+    },
+  ];
+  agents.sessionMcpServers = (id) => {
+    assert.equal(id, thread.id);
+    return servers;
+  };
+  try {
+    await agents.prompt(thread.id, 'Read the attachment aloud', [
+      {
+        id: 'asset-test-id',
+        name: 'my report.docx',
+        uri: 'file:///C:/fixture/report.docx',
+        text: '',
+        mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      },
+    ]);
+    const output = JSON.parse(thread.entries.find((e) => e.type === 'assistant')!.text);
+    assert.deepEqual(output.clientMcpServers, servers);
+    assert.ok(output.mcpPolls >= 2);
+    assert.ok(
+      output.prompt.some(
+        (p: any) =>
+          p.type === 'text' && p.text.includes('asset-test-id') && p.text.includes('read_aloud'),
+      ),
+    );
+  } finally {
+    agents.shutdown();
+    store.flush();
+  }
+});
 test('shutdown admission refuses direct native helper startup, including MCP inspection', async () => {
   const { agents, thread } = setup();
   agents.canConnect = () => false;

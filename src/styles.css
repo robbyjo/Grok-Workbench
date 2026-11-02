@@ -2410,3 +2410,45 @@ pre,
   font-size: 12px;
   flex-shrink: 0;
 }
+.assist-tools {
+  padding: 6px 16px;
+  max-height: 42vh;
+  overflow: auto;
+  border-bottom: 1px solid var(--line);
+}
+.assist-panel {
+  padding: 10px 0;
+  max-width: 760px;
+}
+.assist-panel p,
+.narration-job p {
+  font-size: 13px;
+  margin: 6px 0;
+}
+.assist-panel textarea {
+  display: block;
+  width: 100%;
+  min-height: 65px;
+  margin: 6px 0;
+}
+.assist-panel select {
+  max-width: 440px;
+}
+.assist-panel label,
+.assist-actions button {
+  margin-right: 8px;
+}
+.assist-panel input[type='number'] {
+  width: 80px;
+}
+.narration-job {
+  margin: 8px 0;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.narration-job audio {
+  height: 34px;
+  max-width: 100%;
+  vertical-align: middle;
+}
