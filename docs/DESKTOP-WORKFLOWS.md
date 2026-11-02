@@ -28,6 +28,8 @@ File-plan review checks owner, plan hash, content and source identity, refuses e
 
 The local Zotero adapter uses `http://127.0.0.1:23119/api/`, API version 3 and the returned server identity. Local write keys remain in memory, scoped to the chat, and never appear in model status. A single-use Zotero grant may cover only one write; if collection creation succeeds but record creation needs reauthorization, the plan shows partial and requires review again. A timeout is an uncertain write, not permission to duplicate it. CSL/RIS export remains available without Zotero installed. No Zotero configuration, personal library or native allowed root is silently changed.
 
+Audacity exports use the active project's sample rate, which can differ from the built-in `edited.wav` preview. Follow-up source after v0.9.0 reports the actual native export's rate, duration, channels and measured peak, with preview details under `sourcePreview`. The published v0.9.0 summary reports the preview rate even when Audacity resamples; inspect the exported WAV header for its actual format. A visible dedicated empty Audacity 3.7.9 project passed native import/normalization/export testing; the adapter remains experimental.
+
 ## Examples
 
 - “Revise a copy of `draft.docx`, replace ‘provisional’ with ‘approved’, track the change and comment on the conclusion.”
