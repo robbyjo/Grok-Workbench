@@ -12,12 +12,34 @@ test('website describes the Grok Build GUI in search metadata and fits desktop a
   const app = await electron.launch({ args: [script], cwd: resolve('.') });
   try {
     const page = await app.firstWindow();
+    await page.emulateMedia({ reducedMotion: 'reduce' });
     await expect(page).toHaveTitle('Grok Workbench — Grok Build GUI for Windows, Linux and macOS');
     await expect(page.locator('meta[name="description"]')).toHaveAttribute(
       'content',
       /Grok Build GUI for Windows/,
     );
     await expect(page.locator('h1')).toContainText('Grok Build GUI.');
+    await expect(page.locator('.release-highlight')).toContainText('New in v0.9.0');
+    await expect(page.getByRole('link', { name: 'Explore desktop use' })).toHaveAttribute(
+      'href',
+      '#desktop-use',
+    );
+    await expect(
+      page.getByRole('heading', { name: 'Put Grok to work across your desktop.' }),
+    ).toBeVisible();
+    expect(
+      await page
+        .locator('#desktop-use')
+        .evaluate((el) =>
+          Boolean(
+            el.compareDocumentPosition(document.querySelector('#downloads')!) &
+            Node.DOCUMENT_POSITION_FOLLOWING,
+          ),
+        ),
+    ).toBe(true);
+    await expect(page.locator('.desktop-examples')).toContainText('Word, Excel and PowerPoint');
+    await expect(page.locator('.desktop-validation')).toContainText('bounded demonstrations');
+    await expect(page.locator('.desktop-screenshot img')).toHaveCount(5);
     await expect(page.locator('.download-card')).toHaveCount(3);
     await expect(
       page.getByRole('link', { name: 'Download Windows x64', exact: true }),
@@ -38,12 +60,29 @@ test('website describes the Grok Build GUI in search metadata and fits desktop a
       await expect
         .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
         .toBe(true);
-      await expect(page.locator('.app-screenshot')).toBeVisible();
-      expect(
-        await page.locator('.app-screenshot').evaluate((e: HTMLImageElement) => e.naturalWidth),
-      ).toBeGreaterThan(0);
+      for (const img of await page.locator('.desktop-screenshot img, .app-screenshot').all()) {
+        await img.scrollIntoViewIfNeeded();
+        await expect
+          .poll(() => img.evaluate((e: HTMLImageElement) => e.naturalWidth))
+          .toBeGreaterThan(0);
+        const link = img.locator('..');
+        await expect(link).toHaveAttribute('href', (await img.getAttribute('src')) as string);
+      }
+      await page
+        .locator('.desktop-spotlight')
+        .screenshot({ path: `.test-data/website-desktop-use-${width}.png` });
+      await page
+        .locator('.desktop-examples')
+        .screenshot({ path: `.test-data/website-desktop-examples-${width}.png` });
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await page.screenshot({ path: `.test-data/website-hero-${width}.png` });
       await page.screenshot({ path: `.test-data/website-gui-${width}.png`, fullPage: true });
     }
+    await page.getByRole('combobox', { name: 'Color theme' }).selectOption('dark');
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await page
+      .locator('.desktop-spotlight')
+      .screenshot({ path: '.test-data/website-desktop-use-dark.png' });
   } finally {
     await app.close();
   }
