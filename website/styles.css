@@ -110,6 +110,142 @@ nav a {
 .hero {
   padding-block: 86px 72px;
 }
+.release-highlight {
+  display: inline-flex;
+  align-items: center;
+  gap: 13px;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  color: var(--accent);
+  background: var(--section);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.release-highlight > span:first-child {
+  color: var(--muted);
+  font-weight: 400;
+}
+.desktop-spotlight {
+  padding-block: 52px 25px;
+  margin-bottom: 56px;
+  background: var(--section);
+  border-block: 1px solid var(--line);
+}
+.desktop-lead {
+  display: grid;
+  grid-template-columns: 0.85fr 1.4fr;
+  align-items: center;
+  gap: 48px;
+}
+.desktop-copy > .eyebrow {
+  color: var(--accent);
+  margin-top: 0;
+}
+.desktop-copy > p:not(.eyebrow),
+.desktop-highlights,
+.desktop-gallery article > p,
+.desktop-steps {
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.8;
+}
+.desktop-highlights,
+.desktop-steps {
+  padding-left: 20px;
+  margin-block: 20px;
+}
+.desktop-highlights li,
+.desktop-steps li {
+  padding-left: 3px;
+  margin-block: 7px;
+}
+.desktop-highlights li::marker {
+  color: var(--accent);
+}
+.desktop-screenshot {
+  margin: 0;
+  min-width: 0;
+}
+.desktop-screenshot > a {
+  display: block;
+  overflow: hidden;
+  background: #101416;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: zoom-in;
+}
+.desktop-screenshot img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.spotlight-shot > a {
+  border-color: #52634f;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 20px 40px -24px #132e2470;
+}
+.screenshot-label {
+  padding: 13px 16px;
+  border: 1px solid #52634f;
+  border-bottom: 0;
+  border-radius: 8px 8px 0 0;
+  background: #203b2c;
+  color: #e4edda;
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+.desktop-scope {
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+  margin-top: 35px;
+  padding-top: 20px;
+  font-size: 12px;
+  line-height: 1.8;
+}
+.desktop-examples {
+  padding-block: 4px 64px;
+}
+.desktop-gallery {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 28px;
+  margin-top: 30px;
+}
+.desktop-gallery article {
+  min-width: 0;
+}
+.example-shot > a {
+  height: 250px;
+  background: #eef2f5;
+}
+.example-shot img {
+  height: 100%;
+  object-fit: contain;
+}
+.example-shot figcaption {
+  min-height: 66px;
+}
+.desktop-gallery article > p {
+  margin-bottom: 0;
+}
+.read-aloud-feature {
+  display: grid;
+  grid-template-columns: 0.85fr 1.4fr;
+  gap: 48px;
+  align-items: center;
+  border-top: 1px solid var(--line);
+  padding-top: 45px;
+  margin-top: 45px;
+}
+.desktop-validation {
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--muted);
+  padding-top: 24px;
+  margin-bottom: 0;
+}
 .eyebrow {
   font-size: 11px;
   font-weight: 650;
@@ -409,6 +545,7 @@ blockquote {
     justify-content: space-between;
     gap: 18px;
     font-size: 12px;
+    flex-wrap: wrap;
   }
   .site-header nav a:first-child {
     display: inline;
@@ -428,6 +565,17 @@ blockquote {
   .features {
     gap: 24px;
     padding-bottom: 48px;
+  }
+  .desktop-lead,
+  .read-aloud-feature {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+  .desktop-gallery {
+    gap: 20px;
+  }
+  .example-shot > a {
+    height: 200px;
   }
   .tutorial-layout {
     gap: 35px;
@@ -459,6 +607,23 @@ blockquote {
   .hero .eyebrow {
     font-size: 9px;
     letter-spacing: 1px;
+  }
+  .desktop-spotlight {
+    padding-top: 35px;
+    margin-bottom: 36px;
+  }
+  .desktop-gallery {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  .example-shot > a {
+    height: 260px;
+  }
+  .example-shot figcaption {
+    min-height: 0;
+  }
+  .desktop-examples {
+    padding-bottom: 44px;
   }
   .hero-description {
     font-size: 17px;

@@ -7,7 +7,7 @@
     <meta name="grok-workbench-version" content="0.9.0" />
     <meta
       name="description"
-      content="Grok Workbench is an open-source Grok Build GUI for Windows, with experimental Linux and UNTESTED macOS builds. Chat, edit code, review Git changes and use terminals with the Grok engine built in."
+      content="Grok Workbench is an open-source Grok Build GUI for Windows. New in v0.9.0: desktop control, Office and PDF workflows, creative tools, scientific reports and read aloud. Experimental Linux and UNTESTED macOS builds are also available."
     />
     <title>Grok Workbench — Grok Build GUI for Windows, Linux and macOS</title>
     <link rel="canonical" href="https://robbyjo.github.io/Grok-Workbench/" />
@@ -18,7 +18,7 @@
     />
     <meta
       property="og:description"
-      content="An open-source graphical user interface for Grok Build. Chat, edit code, review Git changes and use terminals, with no separate Grok CLI installation."
+      content="Code with Grok, then work across your Windows desktop. Explore v0.9.0 desktop control, Office/PDF workflows, creative tools, scientific reports and read aloud, with real screenshots."
     />
     <meta property="og:url" content="https://robbyjo.github.io/Grok-Workbench/" />
     <script src="theme.js"></script>
@@ -35,6 +35,7 @@
       >
       <nav aria-label="Main navigation">
         <a href="#downloads">Downloads</a>
+        <a href="#desktop-use">Desktop use</a>
         <a href="#workspace">The workspace</a>
         <a href="#getting-started">Quick start</a>
         <a class="repo-link" href="https://github.com/robbyjo/Grok-Workbench"
@@ -56,10 +57,13 @@
         <p class="eyebrow">
           <span class="status-dot" aria-hidden="true"></span> DESKTOP · OPEN SOURCE · 0.9.0 ALPHA
         </p>
-        <h1 id="hero-title">Grok Build GUI.<br />Your project, in view.</h1>
+        <a class="release-highlight" href="#desktop-use"
+          ><span>New in v0.9.0</span> Desktop use <span aria-hidden="true">↗</span></a
+        >
+        <h1 id="hero-title">Grok Build GUI.<br />Beyond the code.</h1>
         <p class="hero-description">
-          An open-source graphical user interface (GUI) for Grok Build.<br class="desktop-break" />
-          Chat, edit files, review changes, and run your tools in one place.
+          Code with Grok, then put it to work across your Windows desktop. Prepare documents,
+          analyze data, create scene starters, and listen to your PDFs and Word files.
         </p>
         <div class="hero-actions">
           <a class="button primary" href="#downloads"
@@ -75,8 +79,8 @@
               <path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5" /></svg
             >Choose your download</a
           >
-          <a class="text-link" href="#getting-started"
-            >Start here <span aria-hidden="true">↓</span></a
+          <a class="text-link" href="#desktop-use"
+            >Explore desktop use <span aria-hidden="true">↓</span></a
           >
         </div>
         <p class="download-note">
@@ -89,6 +93,53 @@
             >SHA-256 checksums</a
           >
         </p>
+      </section>
+
+      <section class="desktop-spotlight" id="desktop-use" aria-labelledby="desktop-use-title">
+        <div class="wrap desktop-lead">
+          <div class="desktop-copy">
+            <p class="eyebrow">NEW IN V0.9.0 / DESKTOP USE</p>
+            <h2 id="desktop-use-title">Put Grok to work<br />across your desktop.</h2>
+            <p>
+              Enable the tools you need for a chat. Choose a window for mouse and keyboard control,
+              or use workflows for your installed applications.
+            </p>
+            <ul class="desktop-highlights">
+              <li>Work in Windows apps with mouse, keyboard and window observations.</li>
+              <li>Create Office, PDF, creative and scientific outputs.</li>
+              <li>Read text, PDFs and Word DOCX documents aloud.</li>
+            </ul>
+            <a class="text-link" href="#desktop-examples"
+              >See the workflows <span aria-hidden="true">↓</span></a
+            >
+          </div>
+          <figure class="desktop-screenshot spotlight-shot">
+            <div class="screenshot-label">ACTUAL V0.9.0 INTERFACE · WINDOWS</div>
+            <a
+              href="assets/desktop-workflows-v090.png"
+              aria-label="Enlarge desktop workflow controls screenshot"
+            >
+              <img
+                src="assets/desktop-workflows-v090.png"
+                width="760"
+                height="234"
+                alt="The v0.9.0 desktop workflow panel with per-chat tool checkboxes and a scientific-report task starter requesting a JMP analysis, Word report and PowerPoint summary."
+                fetchpriority="high"
+              />
+            </a>
+            <figcaption>
+              Choose tools, edit a task starter, then run it with Grok. This screenshot shows
+              example setup, not a model response. Click to enlarge.
+            </figcaption>
+          </figure>
+        </div>
+        <div class="wrap desktop-scope">
+          Windows desktop control and native application integrations are experimental and require
+          the relevant installed apps. Linux remains experimental; Mac desktop use is UNTESTED.
+          <a href="https://github.com/robbyjo/Grok-Workbench/blob/main/docs/DESKTOP-WORKFLOWS.md"
+            >Setup, supported apps and limits ↗</a
+          >
+        </div>
       </section>
 
       <section class="downloads wrap" id="downloads" aria-labelledby="downloads-title">
@@ -167,6 +218,140 @@
         </p>
       </section>
 
+      <section
+        class="desktop-examples wrap"
+        id="desktop-examples"
+        aria-labelledby="desktop-examples-title"
+      >
+        <div class="section-intro">
+          <p class="eyebrow">ONE CHAT / MORE WAYS TO WORK</p>
+          <h2 id="desktop-examples-title">From a prompt to a desktop task.</h2>
+          <p>Start with a bounded task, inspect the result, and keep the files you create.</p>
+        </div>
+        <div class="desktop-gallery">
+          <article>
+            <figure class="desktop-screenshot example-shot">
+              <a
+                href="assets/desktop-shopping-demo.png"
+                aria-label="Enlarge local shopping practice screenshot"
+              >
+                <img
+                  src="assets/desktop-shopping-demo.png"
+                  width="1100"
+                  height="800"
+                  loading="lazy"
+                  alt="A local shopping practice page after Grok selected blue fountain pens and checked a two-item cart totaling 55 dollars and 70 cents."
+                />
+              </a>
+              <figcaption>
+                Actual live Grok test: a local practice shop. No retailer account, purchase or
+                payment.
+              </figcaption>
+            </figure>
+            <h3>Browser &amp; everyday tasks</h3>
+            <p>
+              Prepare forms, compare products and check cart totals. Preview file organization
+              before applying it, or practice legal chess moves on an offline board.
+            </p>
+          </article>
+          <article>
+            <figure class="desktop-screenshot example-shot scientific-shot">
+              <a
+                href="assets/desktop-science-jmp.png"
+                aria-label="Enlarge native JMP regression output"
+              >
+                <img
+                  src="assets/desktop-science-jmp.png"
+                  width="390"
+                  height="694"
+                  loading="lazy"
+                  alt="Native JMP output for a synthetic six-point linear regression, showing the fitted line, summary of fit and parameter estimates."
+                />
+              </a>
+              <figcaption>
+                Actual JMP output from synthetic test data; coefficients were independently checked.
+              </figcaption>
+            </figure>
+            <h3>Documents &amp; scientific reports</h3>
+            <p>
+              Edit new Word, Excel and PowerPoint copies. Fill or split PDFs, extract text with OCR,
+              and turn CSV/XLSX data into JMP graphs and illustrated Office reports.
+            </p>
+          </article>
+          <article>
+            <figure class="desktop-screenshot example-shot">
+              <a
+                href="assets/desktop-creative-blender.png"
+                aria-label="Enlarge native Blender test render"
+              >
+                <img
+                  src="assets/desktop-creative-blender.png"
+                  width="640"
+                  height="480"
+                  loading="lazy"
+                  alt="A native Blender test render with a blue cube and orange sphere on a gray floor; the workflow also saved an editable Blender scene."
+                />
+              </a>
+              <figcaption>
+                Actual Blender scene-starter render. An editable .blend file was also saved.
+              </figcaption>
+            </figure>
+            <h3>Creative tools &amp; reusable files</h3>
+            <p>
+              Create Blender scene starters, work on new Krita canvases, and run approved local
+              ComfyUI workflows. Export editable SVG diagrams, trim audio, or organize CSL/RIS
+              research notes.
+            </p>
+          </article>
+        </div>
+        <div class="read-aloud-feature">
+          <div class="desktop-copy">
+            <p class="eyebrow">YOUR DOCUMENTS / READ ALOUD</p>
+            <h2>Let Grok do the reading.</h2>
+            <p>
+              Ask Grok to read text, a PDF, or a Word DOCX aloud. Listen in Workbench and keep the
+              generated narration in Media. Scanned PDFs can use the OCR workflow first.
+            </p>
+            <ol class="desktop-steps">
+              <li>Open <strong>Desktop &amp; read aloud</strong> in a project chat.</li>
+              <li>Enable the tools needed for your task, or choose a file to read.</li>
+              <li>Describe the task and review its actual outputs.</li>
+            </ol>
+            <a
+              class="text-link"
+              href="https://github.com/robbyjo/Grok-Workbench/blob/main/docs/DESKTOP-AND-READ-ALOUD.md"
+              >Desktop control &amp; read-aloud guide ↗</a
+            >
+          </div>
+          <figure class="desktop-screenshot">
+            <a
+              href="assets/read-aloud-v090.png"
+              aria-label="Enlarge desktop control and read aloud screenshot"
+            >
+              <img
+                src="assets/read-aloud-v090.png"
+                width="764"
+                height="451"
+                loading="lazy"
+                alt="Real v0.9.0 controls for choosing a Windows target window and reading a workspace DOCX aloud, including voice and PDF page-range options."
+              />
+            </a>
+            <figcaption>
+              Actual v0.9.0 controls with a sample file path. Speech uses your connected Grok
+              account.
+            </figcaption>
+          </figure>
+        </div>
+        <p class="desktop-validation">
+          Screenshots use isolated test projects and synthetic data. These are bounded
+          demonstrations; arbitrary app workflows, real retailer checkout and online game play are
+          unvalidated.
+          <a href="https://github.com/robbyjo/Grok-Workbench/blob/main/docs/VALIDATION.md"
+            >See the validation record ↗</a
+          >
+        </p>
+      </section>
+
       <section class="workspace wrap" id="workspace" aria-labelledby="workspace-title">
         <div class="section-intro">
           <p class="eyebrow">A PLACE TO BUILD</p>
@@ -183,7 +368,7 @@
               alt="Grok Workbench in dark mode, with projects and chats on the left, a chat composer in the center, and a Git diff on the right."
               width="1783"
               height="974"
-              fetchpriority="high"
+              loading="lazy"
           /></a>
           <figcaption>
             <span>Grok Workbench · Windows</span
